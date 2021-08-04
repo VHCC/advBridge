@@ -1,0 +1,14 @@
+{
+  "name": "ADB Bridge Backend API",
+  "version": "0.0.1",
+  "description": "Dedicated for ADB Bridge",
+  "title": "ADB Bridge API",
+  "header": {
+    "title": "Version update 2021/07/",
+    "filename": "doc/src/header.md"
+  },
+  "template": {
+    "withCompare": true,
+    "withGenerator": true
+  }
+}

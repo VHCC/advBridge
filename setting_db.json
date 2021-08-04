@@ -1,0 +1,13 @@
+{
+    "collection": "adv_vms_bridge",
+    "ip": "localhost",
+    "port": 27017,
+    "account": "advantech",
+    "password": "$t@k@Pp$",
+    "authSource": "admin",
+    "replica": {
+        "name": "rs0",
+        "servers": []
+    },
+    "mode": "edge"
+}
