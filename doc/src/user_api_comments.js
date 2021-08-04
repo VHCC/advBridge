@@ -79,21 +79,14 @@
  *       "code": 0,
  *       "message": "SUCCESS",
  *       "user": {
-                    "userUUID": "5e687b3d91d32f3da23f24a9",
-                    "displayName": "new Boy",
-                    "email": "userAsia@advantech.com.tw",
-                    "comUUID": "5f7ecb4a91d32f51ab239479",
-                    "currentDepUUID": "5f7ecb5d91d32f51ab23947a",
-                    "depUUID": "5f7ecb5d91d32f51ab23947a",
-                    "userMemo": "OKOK",
-                    "role": 1000,
-                    "permission": [202, 203, 301],
-
-                    "createUnixTimeStamp": 1586229547,
-                    "lastModifiedUnixTimeStamp": 1586229547,
-                    "lastLoginUnixTimeStamp": 1586229584,
-                    "userToken": "VtVd42NS5n4Bt-JMuxBTDkmMb92cljoLVAKs4JSYuYM="
-                }
+                "userUUID": "610a4b4591d32f2bcb6a468a",
+                "accountID": "Admin",
+                "email": "root",
+                "role": 9999,
+                "userMemo": "Root Memo",
+                "lastLoginUnixTimeStamp": 1628067081,
+                "userToken": "_PSI7W1sT7W7UtTzJffrtTHNAILlhCHfwLLaNUDgW-M="
+            }
  *     }
  */
 

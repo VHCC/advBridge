@@ -16,15 +16,15 @@ type User struct {
 	Email                     string        `json:"email" bson:"email"`
 	Password                  string        `json:"-" bson:"password"`
 	Role                      int32         `json:"role" bson:"role"`
-	ComUUID                   string        `json:"comUUID" bson:"comUUID"`
+	ComUUID                   string        `json:"-" bson:"comUUID"`
 	CurrentDepUUID            string        `json:"-" bson:"currentDepUUID"`
 	DepUUID                   string        `json:"-" bson:"depUUID"`
 	UserMemo                  string        `json:"userMemo" bson:"userMemo"`
-	Permission                []int         `json:"permission" bson:"permission"`
-	CreateUnixTimeStamp       int64         `json:"createUnixTimeStamp" bson:"createUnixTimeStamp"`
-	LastModifiedUnixTimeStamp int64         `json:"lastModifiedUnixTimeStamp" bson:"lastModifiedUnixTimeStamp"`
+	Permission                []int         `json:"-" bson:"permission"`
+	CreateUnixTimeStamp       int64         `json:"-" bson:"createUnixTimeStamp"`
+	LastModifiedUnixTimeStamp int64         `json:"-" bson:"lastModifiedUnixTimeStamp"`
 	LastLoginUnixTimeStamp    int64         `json:"lastLoginUnixTimeStamp" bson:"lastLoginUnixTimeStamp"`
-	AllowReviewNonVisitorData bool          `json:"allowReviewNonVisitorData" bson:"allowReviewNonVisitorData"`
+	AllowReviewNonVisitorData bool          `json:"-" bson:"allowReviewNonVisitorData"`
 	UserToken                 string        `json:"userToken" bson:"userToken"`
 }
 
