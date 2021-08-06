@@ -85,13 +85,29 @@ func InsertToDB() (response map[string]interface{}, err error) {
 		"_id": objectId,
 		"bundle": bson.M{
 			//"serverinternetaddress": "https://vms.ichenprocin.dsmynas.com",
-			"serverinternetaddress": "172.22.28.1", //spec
-			"smtp":                  "",
-			"port":                  "587",
-			"user_registration":     true,
-			"checkin_retention":     "60",
-			"log_retention":         "365",
-			"snapshot_retention":    "60",
+			//"serverinternetaddress": "172.22.28.1", //spec
+			//"smtp":                  "",
+			//"port":                  "587",
+			//"user_registration":     true,
+			//"checkin_retention":     "60",
+			//"log_retention":         "365",
+			//"snapshot_retention":    "60",
+
+			"VMSServer_Protocol": "http",
+			"VMSServer_Host": "vms:80",
+			"VMSServer_Account": "",
+			"VMSServer_Password": "",
+
+			"RFIDServer_MqttConnectionString": "tcp://104.215.147.159:1883",
+			"RFIDServer_MqttTopic": "rfid_temp",
+			"RFIDServer_Username": "ec1aceb8-88aa-4b60-8cff-4e8e1cae9e5f:e325b491-edc1-4019-a4e8-675b7c80852c",
+			"RFIDServer_Password": "1JFoR3YbyGaGfNGPGg19Flqzy",
+
+			"HRServer_SQLServerHost": "172.20.2.85",
+			"HRServer_Account":       "rfiduser",
+			"HRServer_Password":      "rf!dus1r375",
+			"HRServer_DatabaseName":  "RFID",
+			"HRServer_ViewTableName": "RFID_Employee",
 		},
 		"lastModifiedUnixTimeStamp": time.Now().Unix(),
 	})
@@ -143,4 +159,3 @@ func FindFromDB() (response map[string]interface{}, err error) {
 
 	return response, err
 }
-

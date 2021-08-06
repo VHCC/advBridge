@@ -124,11 +124,11 @@ type FetchUserInfoDataValidate struct {
 /**
  * @apiDefine UserLoginStructure
  * @apiParam {String} accountID accountID <a style="color:red">[required]</a>.
- * @apiParam {String} password password email <a style="color:red">[required]</a>.
+ * @apiParam {String} password password <a style="color:red">[required]</a>.
  */
 type LoginUserDataValidate struct {
-	AccountID string `json:"accountID,omitempty" binding:"required"`
-	Password  string `json:"password,omitempty" binding:"required"`
+	AccountID string `json:"accountID" binding:"required"`
+	Password  string `json:"password" binding:"required"`
 }
 
 /**
@@ -136,7 +136,7 @@ type LoginUserDataValidate struct {
  * @apiParam {String} userToken userToken <a style="color:red">[required]</a>. <br/>
  */
 type LogoutUserDataValidate struct {
-	UserToken *string `json:"userToken,omitempty" binding:"required"`
+	UserToken *string `json:"userToken" binding:"required"`
 }
 
 /**

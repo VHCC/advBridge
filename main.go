@@ -20,6 +20,8 @@ import (
 	"advBridge/models"
 	"strings"
 	"time"
+	_ "github.com/denisenkom/go-mssqldb"
+	"github.com/jasonlvhit/gocron"
 )
 
 var exportPORT = "7090"
@@ -29,6 +31,40 @@ func main() {
 	logv.Info(" === adb Bridge server start === ")
 	//gin.SetMode(gin.ReleaseMode)
 
+
+	//conn, err := sql.Open("mssql",
+	//	"server=172.20.2.85;port=1433;user id=rfiduser;password=rf!dus1r375;database=RFID")
+	//
+	//if err != nil {
+	//	logv.Error("Connecting Error")
+	//	logv.Error(err)
+	//	return
+	//}
+	//defer conn.Close()
+	//stmt, err := conn.Prepare("select * from RFID_Employee")
+	//if err != nil {
+	//	logv.Println("Query Error", err)
+	//	return
+	//}
+	//defer stmt.Close()
+	//row, err := stmt.Query()
+	//if err != nil {
+	//	logv.Println("Query Error", err)
+	//	return
+	//}
+	//defer row.Close()
+	//for row.Next() {
+	//	//logv.Info(row.Columns())
+	//	var EMNO string
+	//	var NAME string
+	//	var EPC string
+	//	var MEB_CardNo string
+	//	if err := row.Scan(&EMNO, &NAME, &EPC, &MEB_CardNo); err == nil {
+	//		logv.Info(EMNO, NAME, EPC, MEB_CardNo)
+	//	}
+	//}
+	//logv.Printf("%s\n", " MSSQL finish")
+
 	router := gin.Default()
 	router.Use(cors.Default())
 
@@ -36,6 +72,7 @@ func main() {
 	router.Static("/js", "./templates")
 
 	// ================ v1 ===================
+	ticker10sv1 := time.NewTicker(1 * 10 * time.Second)
 	ticker5mv1 := time.NewTicker(1 * 10 * time.Second)
 	v1 := router.Group("/api/v1")
 	{
@@ -51,6 +88,14 @@ func main() {
 		//v1.POST("/user/listAllUsers", userController.ListAllUsers)
 		//v1.POST("/user/listUsers", userController.ListUsers)
 		//v1.POST("/user/fetchUserInfo", userController.FetchUserInfo)
+
+		// ======== 中介 ========
+		msSQLController := new(controllers.MsSQLController)
+		v1.POST("/hrServer/connectTest", msSQLController.MSSQLConnectionTest)
+
+
+		vmsServerController := new(controllers.VmsController)
+		v1.POST("/vmsServer/connectTest", vmsServerController.VmsServerConnectionTest)
 
 		//vmsFormController := new(controllers.VmsFormController)
 		// ========== VMS ============
@@ -107,18 +152,38 @@ func main() {
 			for {
 				select {
 				case t5 := <-ticker5mv1.C:
-					logv.Info("Tick 5 min at:> ", t5)
-					logv.Info(" === CheckKioskDeviceStatus === ")
+					_ = t5
+					//logv.Info("Tick 5 min at:> ", t5)
+					//logv.Info(" === CheckKioskDeviceStatus === ")
 					//atLicenceController.CheckKioskDeviceStatus()
 					//_ = t5
 					//case t30s := <-ticker60s_v2.C:
 					//logv.Info("Tick 60 s at:> ", t30s)
 					//vmsCostLogController.CheckClientDeviceCostAndWriteLog()
+				case t10s := <-ticker10sv1.C:
+					//logv.Info("Tick 10 s at:> ", t10s)
+					_ = t10s
+					targetTimeStamp := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(),
+						04, 59, 59, 0, time.UTC)
+					nowTimeStamp := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(),
+						time.Now().Hour(), time.Now().Minute(), time.Now().Second(), 0, time.UTC)
+					//logv.Info("now:> ", nowTimeStamp.Unix(), " || targetTime:> ", targetTimeStamp.Unix())
+					//logv.Info()
+					//
+					if nowTimeStamp.Unix() > targetTimeStamp.Unix() {
+						//logv.Info(" ============= msSQLController.SyncHRDatabase ===========")
+						//msSQLController.SyncHRDatabase()
+					}
+
 				}
 			}
 		}()
-
 	}
+
+	gocron.ChangeLoc(time.UTC)
+	gocron.Every(1).Days().At("05:00").Do(syncTask)
+	//gocron.Every(1).Second().Do(syncTask)
+	gocron.Start()
 
 	// ====================== v2 =======================
 	ticker10sv2 := time.NewTicker(1 * 10 * time.Second)
@@ -219,27 +284,27 @@ func main() {
 			for {
 				select {
 				case t3 := <-ticker3mv2.C:
-					logv.Info("Tick 3 min at:> ", t3)
+					_ = t3
+					//logv.Info("Tick 3 min at:> ", t3)
 					//vms2KioskDeviceController.CheckKioskDeviceStatus()
 				case t10s := <-ticker10sv2.C:
 					//logv.Info("Tick 10 s at:> ", t10s)
 					_ = t10s
 					targetTimeStamp := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(),
-						23, 59, 59, 0, time.UTC)
+						04, 59, 59, 0, time.UTC)
 					nowTimeStamp := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(),
 						time.Now().Hour(), time.Now().Minute(), time.Now().Second(), 0, time.UTC)
 					//logv.Info("now:> ", nowTimeStamp.Unix(), " || targetTime:> ", targetTimeStamp.Unix())
-					//logv.Info()
 					//
 					if nowTimeStamp.Unix() > targetTimeStamp.Unix() {
-						logv.Info(" ============= CheckKioskReportsRetentions ===========")
+						//logv.Info(" ============= CheckKioskReportsRetentions ===========")
 						// TODO Check retentionData
 						//vms2KioskReportsController.CheckKioskReportsRetentions()
 						//vms2LogController.CheckVmsLogRetentions()
 					}
 				case t60m := <-ticker60mv2.C:
 					_ = t60m
-					logv.Info(" ============= CheckLogFileStatus ===========")
+					//logv.Info(" ============= CheckLogFileStatus ===========")
 					//vms2KioskDeviceLogController.CheckLogFileStatus()
 					break
 				case t10m := <-ticker10mv2.C:
@@ -362,4 +427,10 @@ func serve(ctx context.Context, router http.Handler) (err error) {
 	}
 
 	return
+}
+
+func syncTask() {
+	msSQLController := new(controllers.MsSQLController)
+	logv.Info(" ============= msSQLController.SyncHRDatabase ===========")
+	msSQLController.SyncHRDatabase()
 }

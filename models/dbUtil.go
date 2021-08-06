@@ -1,8 +1,11 @@
-package db
+package models
 
 import (
+	"database/sql"
 	logv "github.com/sirupsen/logrus"
 	"gopkg.in/mgo.v2"
+	_ "github.com/denisenkom/go-mssqldb"
+	"gopkg.in/mgo.v2/bson"
 )
 
 type DBConnection struct {
@@ -11,7 +14,7 @@ type DBConnection struct {
 
 func NewConnection(host string, dbConfig map[string]interface{}) (conn *DBConnection) {
 
-	logv.Info("dbUtil, NewConnection :> ", host)
+	logv.Info("dbUtil, MongoDB :> ", host)
 	session, err := mgo.Dial(host)
 	if err != nil {
 		panic(err)
@@ -26,6 +29,33 @@ func NewConnection(host string, dbConfig map[string]interface{}) (conn *DBConnec
 	}
 
 	conn = &DBConnection{session}
+	return conn
+}
+
+func NewMSSQLConnection() (conn *sql.DB) {
+	collectionConfig := dbConnect.UseTable(DB_Name, DB_Table_Global_Config)
+	defer collectionConfig.Database.Session.Close()
+
+	var globalConfig GlobalConfig
+
+	err = collectionConfig.Find(bson.M{}).One(&globalConfig)
+	SQLServerHost := globalConfig.Bundle["HRServer_SQLServerHost"].(string)
+	SQLServerAccount := globalConfig.Bundle["HRServer_Account"].(string)
+	SQLServerPassword := globalConfig.Bundle["HRServer_Password"].(string)
+	SQLServerDBName := globalConfig.Bundle["HRServer_DatabaseName"].(string)
+
+	conn, err := sql.Open("mssql",
+		//"server=" + SQLServerHost +
+		"server=" + SQLServerHost +
+		";port=1433" +
+		";user id=" + SQLServerAccount +
+		";password=" + SQLServerPassword +
+		";database=" + SQLServerDBName)
+	if err != nil {
+		logv.Error("Connecting Error:> ", err)
+		return conn
+	}
+	logv.Info("dbUtil, MSSQL :> ", SQLServerHost + ":1433")
 	return conn
 }
 

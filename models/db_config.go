@@ -1,7 +1,6 @@
 package models
 
 import (
-	"advBridge/db"
 	"fmt"
 	logv "github.com/sirupsen/logrus"
 	"gopkg.in/mgo.v2/bson"
@@ -69,11 +68,15 @@ var db_host = setting_db_json["ip"].(string)
 var db_port = FloatToString(setting_db_json["port"].(float64))
 
 var server = db_host + ":" + db_port
-var dbConnect = db.NewConnection(server, setting_db_json)
+var dbConnect = NewConnection(server, setting_db_json)
+var msSQLConnect = NewMSSQLConnection()
 var err = initGlobalConfigModel()
 var SERVER_MODE = "edge"
 
 var DB_Name = setting_db_json["collection"].(string)
+
+// ====== 中介 ======
+var DB_Table_ADV_User = "bridge_adv_users"
 
 var DB_Table_User = "users"
 var DB_Table_Project = "projects"
