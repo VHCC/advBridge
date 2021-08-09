@@ -17,7 +17,6 @@ type ADVUser struct {
 }
 
 type SyncRecords struct {
-
 }
 
 type MsSQLModel struct{}
@@ -44,7 +43,7 @@ func (m *MsSQLModel) ConnectionTest(
 		logv.Error("Connecting Error:> ", err)
 		return conn, err
 	}
-	logv.Info("ConnectionTest, MSSQL :> ", host + ":1433")
+	logv.Info("ConnectionVMSTest, MSSQL :> ", host + ":1433")
 	return conn, err
 }
 

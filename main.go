@@ -31,40 +31,6 @@ func main() {
 	logv.Info(" === adb Bridge server start === ")
 	//gin.SetMode(gin.ReleaseMode)
 
-
-	//conn, err := sql.Open("mssql",
-	//	"server=172.20.2.85;port=1433;user id=rfiduser;password=rf!dus1r375;database=RFID")
-	//
-	//if err != nil {
-	//	logv.Error("Connecting Error")
-	//	logv.Error(err)
-	//	return
-	//}
-	//defer conn.Close()
-	//stmt, err := conn.Prepare("select * from RFID_Employee")
-	//if err != nil {
-	//	logv.Println("Query Error", err)
-	//	return
-	//}
-	//defer stmt.Close()
-	//row, err := stmt.Query()
-	//if err != nil {
-	//	logv.Println("Query Error", err)
-	//	return
-	//}
-	//defer row.Close()
-	//for row.Next() {
-	//	//logv.Info(row.Columns())
-	//	var EMNO string
-	//	var NAME string
-	//	var EPC string
-	//	var MEB_CardNo string
-	//	if err := row.Scan(&EMNO, &NAME, &EPC, &MEB_CardNo); err == nil {
-	//		logv.Info(EMNO, NAME, EPC, MEB_CardNo)
-	//	}
-	//}
-	//logv.Printf("%s\n", " MSSQL finish")
-
 	router := gin.Default()
 	router.Use(cors.Default())
 
@@ -73,7 +39,8 @@ func main() {
 
 	// ================ v1 ===================
 	ticker10sv1 := time.NewTicker(1 * 10 * time.Second)
-	ticker5mv1 := time.NewTicker(1 * 10 * time.Second)
+	ticker1m1 := time.NewTicker(1 * 60 * time.Second)
+	ticker5mv1 := time.NewTicker(5 * 60 * time.Second)
 	v1 := router.Group("/api/v1")
 	{
 		userController := new(controllers.UserController)
@@ -95,7 +62,20 @@ func main() {
 
 
 		vmsServerController := new(controllers.VmsController)
+		vmsServerController.SyncVMSKioskReportsData()
 		v1.POST("/vmsServer/connectTest", vmsServerController.VmsServerConnectionTest)
+		v1.POST("/vmsServer/fetchVMSKioskReports", vmsServerController.FetchVmsKioskReports)
+		v1.POST("/vmsServer/fetchVMSKioskDevices", vmsServerController.FetchVmsKioskDevices)
+
+		mqttTopicController := new(controllers.TopicController)
+		mqttTopicController.Init()
+
+		kioskLocationController := new(controllers.KioskLocationController)
+		v1.POST("/kioskLocation/create", kioskLocationController.CreateLocation)
+		v1.POST("/kioskLocation/delete", kioskLocationController.RemoveLocation)
+		v1.POST("/kioskLocation/fetchAll", kioskLocationController.FetchAllLocation)
+		v1.POST("/kioskLocation/edit", kioskLocationController.EditLocation)
+
 
 		//vmsFormController := new(controllers.VmsFormController)
 		// ========== VMS ============
@@ -153,6 +133,7 @@ func main() {
 				select {
 				case t5 := <-ticker5mv1.C:
 					_ = t5
+					mqttTopicController.SendDataToServer()
 					//logv.Info("Tick 5 min at:> ", t5)
 					//logv.Info(" === CheckKioskDeviceStatus === ")
 					//atLicenceController.CheckKioskDeviceStatus()
@@ -171,10 +152,10 @@ func main() {
 					//logv.Info()
 					//
 					if nowTimeStamp.Unix() > targetTimeStamp.Unix() {
-						//logv.Info(" ============= msSQLController.SyncHRDatabase ===========")
-						//msSQLController.SyncHRDatabase()
 					}
-
+					case t1m := <-ticker1m1.C:
+						_ = t1m
+						vmsServerController.SyncVMSKioskReportsData()
 				}
 			}
 		}()
