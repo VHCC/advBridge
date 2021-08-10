@@ -73,7 +73,7 @@ func (cc *KioskLocationController) CreateLocation(c *gin.Context) {
 }
 
 /**
-@api {POST} /api/v1/kioskLocation/remove Delete Kiosk Location
+@api {POST} /api/v1/kioskLocation/delete Delete Kiosk Location
 @apiDescription Delete Kiosk Location
 @apiversion 0.0.1
 @apiGroup 004 Kiosk Location
