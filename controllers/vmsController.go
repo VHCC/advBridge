@@ -17,7 +17,11 @@ type VmsController struct {
 var vmsServerModel = new(models.VmsServerModel)
 
 func (cc *VmsController) SyncVMSKioskReportsData() {
-	vmsServerModel.LoginVMS()
+	err := vmsServerModel.LoginVMS()
+	if err != nil {
+		logv.Error(err.Error())
+		return
+	}
 	vmsServerModel.SyncVMSReportData()
 	vmsServerModel.SyncVMSKioskDeviceData()
 }

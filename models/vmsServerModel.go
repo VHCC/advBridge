@@ -66,7 +66,7 @@ type VmsListKioskByPResponse struct {
 	DataCounts   int               `json:"dataCounts"`
 }
 
-func (m *VmsServerModel) LoginVMS() {
+func (m *VmsServerModel) LoginVMS() (err error){
 	collectionConfig := dbConnect.UseTable(DB_Name, DB_Table_Global_Config)
 	defer collectionConfig.Database.Session.Close()
 
@@ -87,17 +87,21 @@ func (m *VmsServerModel) LoginVMS() {
 	loginData_json, _ := json.Marshal(loginData)
 
 	client := &http.Client{}
-	req, _ := http.NewRequest("POST", protocol+"://"+host+API_login, bytes.NewBuffer(loginData_json))
+	req, err := http.NewRequest("POST", protocol+"://"+host+API_login, bytes.NewBuffer(loginData_json))
+	if err != nil {
+		logv.Error(err.Error())
+		return errors.New(err.Error())
+	}
 	req.Header.Set("Content-Type", "application/json")
 	res, err := client.Do(req)
 	if err != nil {
 		logv.Error(err.Error())
-		return
+		return errors.New(err.Error())
 	}
 	content, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		logv.Error(err.Error())
-		return
+		return errors.New(err.Error())
 	}
 	respBody := string(content)
 	//fmt.Printf("Post request with json result: %s\n", respBody)
@@ -108,6 +112,7 @@ func (m *VmsServerModel) LoginVMS() {
 	defer res.Body.Close()
 	if vmsLoginResponse.Code != 0 {
 		logv.Error(errors.New(vmsLoginResponse.Message))
+		return errors.New(vmsLoginResponse.Message)
 	}
 
 	logv.Info(" === Login Success, USER === ", vmsLoginResponse.User.AccountID)
@@ -115,6 +120,7 @@ func (m *VmsServerModel) LoginVMS() {
 	m.protocol = protocol
 	m.host = host
 	m.userToken = vmsLoginResponse.User.UserToken
+	return err
 }
 
 func (m *VmsServerModel) ConnectionVMSTest(
