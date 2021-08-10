@@ -7,7 +7,6 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"net"
 	"os"
-	"strings"
 	"time"
 )
 
@@ -182,11 +181,11 @@ func (m *GlobalConfigModel) UpdateToDB(data apiForms.UpdateGlobalConfigDataValid
 	var updateRequestSub = make(map[string]interface{})
 
 	for key, value := range globalConfig.Bundle {
-		updateRequestSub[strings.ToLower(key)] = value
+		updateRequestSub[key] = value
 	}
 
 	for key, value := range myMap {
-		updateRequestSub[strings.ToLower(key)] = value
+		updateRequestSub[key] = value
 	}
 
 	logv.Info(updateRequestSub)
