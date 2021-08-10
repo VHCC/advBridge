@@ -1,12 +1,16 @@
 package main
 
 import (
+	"advBridge/controllers"
+	"advBridge/models"
 	"context"
 	"crypto/md5"
 	"fmt"
+	_ "github.com/denisenkom/go-mssqldb"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
+	"github.com/jasonlvhit/gocron"
 	logv "github.com/sirupsen/logrus"
 	_ "image/draw"
 	_ "image/jpeg"
@@ -16,12 +20,8 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"advBridge/controllers"
-	"advBridge/models"
 	"strings"
 	"time"
-	_ "github.com/denisenkom/go-mssqldb"
-	"github.com/jasonlvhit/gocron"
 )
 
 var exportPORT = "7090"
@@ -30,7 +30,6 @@ var buildVersion = "v0.0.1"
 func main() {
 	logv.Info(" === adb Bridge server start === ")
 	//gin.SetMode(gin.ReleaseMode)
-
 	router := gin.Default()
 	router.Use(cors.Default())
 
@@ -39,7 +38,7 @@ func main() {
 
 	// ================ v1 ===================
 	ticker10sv1 := time.NewTicker(1 * 10 * time.Second)
-	ticker1m1 := time.NewTicker(1 * 60 * time.Second)
+	ticker1m1 := time.NewTicker(1 * 10 * time.Second)
 	ticker5mv1 := time.NewTicker(5 * 60 * time.Second)
 	v1 := router.Group("/api/v1")
 	{
@@ -68,7 +67,7 @@ func main() {
 		v1.POST("/vmsServer/fetchVMSKioskDevices", vmsServerController.FetchVmsKioskDevices)
 
 		mqttTopicController := new(controllers.TopicController)
-		mqttTopicController.Init()
+		//mqttTopicController.Init()
 
 		kioskLocationController := new(controllers.KioskLocationController)
 		v1.POST("/kioskLocation/create", kioskLocationController.CreateLocation)

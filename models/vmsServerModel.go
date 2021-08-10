@@ -8,6 +8,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 )
 
 type VmsServerModel struct {
@@ -20,6 +21,7 @@ type VmsServerModel struct {
 const API_login = "/api/v1/user/loginUser"
 const API_listKRByPData = "/api/v2/vmsKioskReports/listKioskReportsByParameter"
 const API_listKioskByPData = "/api/v2/vmsKioskDevice/listKioskDevicesByParameter"
+const API_listPersonByPData = "/api/v2/vmsPerson/listVmsPersonByParameter"
 
 //  ======= login ======
 type VmsLoginBody struct {
@@ -66,7 +68,23 @@ type VmsListKioskByPResponse struct {
 	DataCounts   int               `json:"dataCounts"`
 }
 
-func (m *VmsServerModel) LoginVMS() (err error){
+// ======== VmsListPersonByPBody
+type VmsListPersonByPBody struct {
+	UserToken  string `json:"userToken"`
+	SortBy     string `json:"sortBy"`
+	Desc       bool   `json:"desc"`
+	StartIndex int    `json:"startIndex"`
+	Count      int    `json:"count"`
+}
+
+type VmsListPersonByPResponse struct {
+	Code       int          `json:"code"`
+	Message    string       `json:"message"`
+	Vms2Person []Vms2Person `json:"vmsPersons"`
+	DataCounts int          `json:"dataCounts"`
+}
+
+func (m *VmsServerModel) LoginVMS() (err error, errCode int) {
 	collectionConfig := dbConnect.UseTable(DB_Name, DB_Table_Global_Config)
 	defer collectionConfig.Database.Session.Close()
 
@@ -90,18 +108,18 @@ func (m *VmsServerModel) LoginVMS() (err error){
 	req, err := http.NewRequest("POST", protocol+"://"+host+API_login, bytes.NewBuffer(loginData_json))
 	if err != nil {
 		logv.Error(err.Error())
-		return errors.New(err.Error())
+		return errors.New(err.Error()), 101
 	}
 	req.Header.Set("Content-Type", "application/json")
 	res, err := client.Do(req)
 	if err != nil {
 		logv.Error(err.Error())
-		return errors.New(err.Error())
+		return errors.New(err.Error()), 101
 	}
 	content, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		logv.Error(err.Error())
-		return errors.New(err.Error())
+		return errors.New(err.Error()), 101
 	}
 	respBody := string(content)
 	//fmt.Printf("Post request with json result: %s\n", respBody)
@@ -112,7 +130,7 @@ func (m *VmsServerModel) LoginVMS() (err error){
 	defer res.Body.Close()
 	if vmsLoginResponse.Code != 0 {
 		logv.Error(errors.New(vmsLoginResponse.Message))
-		return errors.New(vmsLoginResponse.Message)
+		return errors.New(vmsLoginResponse.Message), 104
 	}
 
 	logv.Info(" === Login Success, USER === ", vmsLoginResponse.User.AccountID)
@@ -120,7 +138,7 @@ func (m *VmsServerModel) LoginVMS() (err error){
 	m.protocol = protocol
 	m.host = host
 	m.userToken = vmsLoginResponse.User.UserToken
-	return err
+	return err, 0
 }
 
 func (m *VmsServerModel) ConnectionVMSTest(
@@ -167,7 +185,7 @@ func (m *VmsServerModel) ConnectionVMSTest(
 	return err
 }
 
-func (m *VmsServerModel) SyncVMSReportData() {
+func (m *VmsServerModel) SyncVMSReportData(objectID bson.ObjectId) {
 	listKRByPData := VmsListKRByPBody{
 		m.userToken,
 		"avalo_utc_timestamp",
@@ -202,9 +220,11 @@ func (m *VmsServerModel) SyncVMSReportData() {
 	}
 
 	logv.Info(" === ListKRByP Success, Response === Counts:> ", vmsListKRByPResponse.DataCounts)
+
 	for i := 0; i < vmsListKRByPResponse.DataCounts; i++ {
-		saveReportsToBridgeDatabase(vmsListKRByPResponse.KioskReports[i])
+		saveReportsToBridgeDatabase(objectID.Hex(), vmsListKRByPResponse.KioskReports[i])
 	}
+	vmsSyncRecordsModel.UpdateStatus(objectID.Hex(), "Success", "")
 }
 
 func (m *VmsServerModel) SyncVMSKioskDeviceData() {
@@ -245,7 +265,48 @@ func (m *VmsServerModel) SyncVMSKioskDeviceData() {
 	}
 }
 
-func saveReportsToBridgeDatabase(KRData KioskReport) () {
+func (m *VmsServerModel) SyncVMSPersonData() {
+	listPersonByPData := VmsListPersonByPBody{
+		m.userToken,
+		"vmsPersonSerial",
+		true,
+		0,
+		-1,
+	}
+	listPersonByPDataJson, _ := json.Marshal(listPersonByPData)
+
+	client := &http.Client{}
+	req, _ := http.NewRequest("POST", m.protocol+"://"+m.host+API_listPersonByPData, bytes.NewBuffer(listPersonByPDataJson))
+	req.Header.Set("Content-Type", "application/json")
+	res, err := client.Do(req)
+	if err != nil {
+		logv.Error(err.Error())
+		return
+	}
+	content, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		logv.Error(err.Error())
+		return
+	}
+	respBody := string(content)
+
+	vmsListPersonByPResponse := &VmsListPersonByPResponse{}
+	errq := json.Unmarshal([]byte(respBody), vmsListPersonByPResponse)
+	_ = errq
+	defer res.Body.Close()
+	if vmsListPersonByPResponse.Code != 0 {
+		logv.Error(errors.New(vmsListPersonByPResponse.Message))
+	}
+	logv.Info(" === ListPersonByP Success, Response === Counts:> ", vmsListPersonByPResponse.DataCounts)
+	for i := 0; i < vmsListPersonByPResponse.DataCounts; i++ {
+		savePersonToBridgeDatabase(vmsListPersonByPResponse.Vms2Person[i])
+	}
+}
+
+func saveReportsToBridgeDatabase(recordsUUID string, KRData KioskReport) () {
+	collectionSyncRecords := dbConnect.UseTable(DB_Name, DB_Table_ADV_VMS_SYNC_RECORDS)
+	defer collectionSyncRecords.Database.Session.Close()
+
 	collection := dbConnect.UseTable(DB_Name, DB_Table_ADV_SYNC_VMS_KIOSK_REPORTS)
 	defer collection.Database.Session.Close()
 
@@ -256,10 +317,36 @@ func saveReportsToBridgeDatabase(KRData KioskReport) () {
 		//logv.Error("KioskReports UUID:> ", KRData.ID.Hex(), " already exist !")
 		return
 	}
+
+	sr := VmsSyncRecords{}
+
+	err = collectionSyncRecords.FindId(bson.ObjectIdHex(recordsUUID)).One(&sr)
+	if err != nil {
+		logv.Error(err.Error())
+		return
+	}
+
+	err = collectionSyncRecords.UpdateId(bson.ObjectIdHex(recordsUUID), bson.M{"$set": bson.M{"syncVmsDataCounts": sr.SyncVmsDataCounts + 1}})
+	if err != nil {
+		logv.Error(err.Error())
+		return
+	}
+
+	rfidMQTTModel.PublishToRFIDServer(KRData.VmsPerson[0].VmsPersonSerial,
+		KRData.AvaloDeviceUuid,
+		strconv.FormatFloat(float64(KRData.AvaloTemperature), 'f', 1, 64))
+
 	logv.Info("ADD KioskReports UUID:> ", KRData.ID.Hex())
+
+	err = collectionSyncRecords.UpdateId(bson.ObjectIdHex(recordsUUID), bson.M{"$set": bson.M{"RFIDDataSendCounts": sr.RFIDDataSendCounts + 1}})
+	if err != nil {
+		logv.Error(err.Error())
+		return
+	}
 
 	err = collection.Insert(bson.M{
 		"_id":                         KRData.ID,
+		"recordsUUID":                 recordsUUID,
 		"mappingPersonUUID":           KRData.MappingPersonUUID,
 		"avalo_device":                KRData.AvaloDevice,
 		"avalo_device_uuid":           KRData.AvaloDeviceUuid,
@@ -303,7 +390,7 @@ func saveKioskDeviceToBridgeDatabase(KioskData KioskDeviceInfo) () {
 			logv.Error(err.Error())
 		}
 	}
-	logv.Info("ADD KioskDevice UUID:> ", KioskData.ID.Hex())
+	//logv.Info("ADD KioskDevice UUID:> ", KioskData.ID.Hex())
 
 	err = collection.Insert(bson.M{
 		"_id":                     KioskData.ID,
@@ -339,6 +426,33 @@ func saveKioskDeviceToBridgeDatabase(KioskData KioskDeviceInfo) () {
 		"connectTimeStamp":        KioskData.ConnectTimeStamp,
 		"lastHeartBeatsTimeStamp": KioskData.LastHeartBeatsTimeStamp,
 		"lastSyncTimeStamp":       KioskData.LastSyncTimeStamp,
+	})
+}
+
+func savePersonToBridgeDatabase(PersonData Vms2Person) () {
+	collection := dbConnect.UseTable(DB_Name, DB_Table_ADV_SYNC_VMS_PERSON)
+	defer collection.Database.Session.Close()
+
+	person := KioskDeviceInfo{}
+
+	err := collection.FindId(bson.ObjectIdHex(PersonData.ID.Hex())).One(&person)
+	if err == nil {
+		logv.Info("Update person:> ", person.ID.Hex())
+		err = collection.RemoveId(person.ID.Hex())
+		if err == nil {
+			logv.Error(err.Error())
+		}
+	}
+
+	err = collection.Insert(bson.M{
+		"_id":                 PersonData.ID,
+		"vmsPersonSerial":     PersonData.VMSPersonSerial,
+		"vmsPersonName":       PersonData.VMSPersonName,
+		"vmsPersonUnit":       PersonData.VMSPersonUnit,
+		"vmsPersonEmail":      PersonData.VMSPersonEmail,
+		"vmsPersonMemo":       PersonData.VMSPersonMemo,
+		"isRealName":          PersonData.IsRealName,
+		"createUnixTimestamp": PersonData.CreateUnixTimestamp,
 	})
 }
 

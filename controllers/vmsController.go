@@ -17,13 +17,31 @@ type VmsController struct {
 var vmsServerModel = new(models.VmsServerModel)
 
 func (cc *VmsController) SyncVMSKioskReportsData() {
-	err := vmsServerModel.LoginVMS()
+	objectID, err := vmsSyncRecordsModel.GenerateNewInstance()
+	err, errCode := vmsServerModel.LoginVMS()
 	if err != nil {
-		logv.Error(err.Error())
+		logv.Error(err.Error() + ", code:> ", errCode)
+		switch errCode {
+		case 101:
+			vmsSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Vms Server 連線失敗")
+			break;
+		case 104:
+			vmsSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Vms Server 登入失敗")
+			break;
+		}
 		return
 	}
-	vmsServerModel.SyncVMSReportData()
+	rfidMQTTModel.DisconnectionToRFIDServer()
+	err = rfidMQTTModel.ConnectionToRFIDServer()
+	if err != nil {
+		logv.Error(err.Error())
+		vmsSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Mqtt 連線失敗")
+		return
+	}
+
+	vmsServerModel.SyncVMSReportData(objectID)
 	vmsServerModel.SyncVMSKioskDeviceData()
+	vmsServerModel.SyncVMSPersonData()
 }
 
 /**

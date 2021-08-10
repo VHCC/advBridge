@@ -79,8 +79,10 @@ var DB_Name = setting_db_json["collection"].(string)
 var DB_Table_ADV_User = "bridge_adv_users"
 var DB_Table_ADV_SYNC_VMS_KIOSK_REPORTS = "bridge_adv_sync_vms_kiosk_reports"
 var DB_Table_ADV_SYNC_VMS_KIOSK_DEVICES = "bridge_adv_sync_vms_kiosk_devices"
+var DB_Table_ADV_SYNC_VMS_PERSON = "bridge_adv_sync_vms_person"
 
 var DB_Table_ADV_KIOSK_LOCATION = "bridge_adv_kiosk_location"
+var DB_Table_ADV_VMS_SYNC_RECORDS = "bridge_adv_vms_sync_records"
 
 var DB_Table_User = "users"
 var DB_Table_Project = "projects"

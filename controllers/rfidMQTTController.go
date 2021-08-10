@@ -36,7 +36,7 @@ func (topic *TopicController) ReConnectToServer() {
 
 func (topic *TopicController) SendDataToServer() {
 	logv.Info(" === MQTT SendDataToServer === ")
-	rfidMQTTModel.PublishToRFIDServer()
+	rfidMQTTModel.PublishToRFIDServerTest()
 }
 
 // ============= API ===============

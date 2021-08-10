@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	logv "github.com/sirupsen/logrus"
 	"gopkg.in/mgo.v2/bson"
 	"time"
 )
@@ -12,6 +13,8 @@ import (
 type RFIDMQTTModel struct {
 	mqttClient mqtt.Client
 }
+
+var rfidMQTTModel = new(RFIDMQTTModel)
 
 var RFIDTopic = "rfid_temp"
 
@@ -42,6 +45,7 @@ func (m *RFIDMQTTModel) ConnectionToRFIDServer() (err error) {
 	opts.OnConnectionLost = connectLostHandler
 	client := mqtt.NewClient(opts)
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
+		logv.Error(token.Error().Error())
 		return errors.New(token.Error().Error())
 	}
 	m.mqttClient = client
@@ -49,7 +53,9 @@ func (m *RFIDMQTTModel) ConnectionToRFIDServer() (err error) {
 }
 
 func (m *RFIDMQTTModel) DisconnectionToRFIDServer() () {
-	m.mqttClient.Disconnect(0)
+	if m.mqttClient != nil {
+		m.mqttClient.Disconnect(0)
+	}
 }
 
 var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
@@ -75,7 +81,7 @@ type RFIDDataBody struct {
 	TEMPERATURE string `json:"temperature"`
 }
 
-func (m *RFIDMQTTModel) PublishToRFIDServer() (){
+func (m *RFIDMQTTModel) PublishToRFIDServerTest() (){
 	RFIDData := RFIDDataBody{
 		"000000000000000000B02514",
 		time.Now().String(),
@@ -93,12 +99,31 @@ func (m *RFIDMQTTModel) PublishToRFIDServer() (){
 	}
 }
 
+func (m *RFIDMQTTModel) PublishToRFIDServer(ETAG string, kioskUUID string, temp string) (err error){
+	if m.mqttClient == nil || !m.mqttClient.IsConnected() {
+		return errors.New("MQTT did not connected yet")
+	}
+	RFIDData := RFIDDataBody{
+		ETAG,
+		time.Now().String(),
+		"",
+		"",
+		"",
+		"",
+		kioskUUID,
+		temp,
+	}
+	RFIDDataJson, _ := json.Marshal(RFIDData)
+	m.mqttClient.Publish(RFIDTopic, 0, false, RFIDDataJson)
+	return err
+}
+
 // ======= DEBUG ========
 func publish(client mqtt.Client) {
 	num := 10
 	for i := 0; i < num; i++ {
 		text := fmt.Sprintf("Message %d", i)
-		token := client.Publish(RFIDTopic, 0, false, text)
+		token := client.Publish(RFIDTopic, 1, false, text)
 		token.Wait()
 		time.Sleep(time.Second)
 	}

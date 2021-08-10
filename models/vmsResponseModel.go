@@ -142,3 +142,25 @@ type KioskDeviceInfoResponse struct {
 	LastHeartBeatsTimeStamp int64         `json:"-" bson:"lastHeartBeatsTimeStamp"`
 	LastSyncTimeStamp       int64         `json:"-" bson:"lastSyncTimeStamp"`
 }
+
+type Vms2Person struct {
+	ID                  bson.ObjectId `json:"vmsPersonUUID" bson:"_id"`
+	VMSPersonSerial     string        `json:"vmsPersonSerial" bson:"vmsPersonSerial"`
+	VMSPersonName       string        `json:"vmsPersonName" bson:"vmsPersonName"`
+	VMSPersonUnit       string        `json:"vmsPersonUnit" bson:"vmsPersonUnit"`
+	VMSPersonEmail      string        `json:"vmsPersonEmail" bson:"vmsPersonEmail"`
+	VMSPersonMemo       string        `json:"vmsPersonMemo" bson:"vmsPersonMemo"`
+	IsRealName          bool          `json:"-" bson:"isRealName"`
+	CreateUnixTimestamp int64         `json:"createUnixTimestamp" bson:"createUnixTimestamp"`
+}
+
+type Vms2PersonResponse struct {
+	ID                  bson.ObjectId `json:"vmsPersonUUID" bson:"_id,omitempty"`
+	VMSPersonSerial     string        `json:"vmsPersonSerial" bson:"vmsPersonSerial"`
+	VMSPersonName       string        `json:"vmsPersonName" bson:"vmsPersonName"`
+	VMSPersonUnit       string        `json:"vmsPersonUnit" bson:"vmsPersonUnit"`
+	VMSPersonEmail      string        `json:"vmsPersonEmail" bson:"vmsPersonEmail"`
+	VMSPersonMemo       string        `json:"vmsPersonMemo" bson:"vmsPersonMemo"`
+	IsRealName          bool          `json:"-" bson:"isRealName"`
+	CreateUnixTimestamp int64         `json:"createUnixTimestamp" bson:"createUnixTimestamp"`
+}
