@@ -16,7 +16,7 @@ type ADVUser struct {
 	CreateUnixTimeStamp int64         `json:"createUnixTimeStamp" bson:"createUnixTimeStamp"`
 }
 
-type SyncRecords struct {
+type HrSyncRecords struct {
 }
 
 type MsSQLModel struct{}
