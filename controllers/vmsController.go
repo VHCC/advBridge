@@ -73,12 +73,15 @@ func (cc *VmsController) VmsServerConnectionTest(c *gin.Context) {
 * @apiSuccess     {Number} code  錯誤代碼 </br>
 *                 0:SUCCESS (成功) </br>
 *                 1:INVALID_PARAMETERS (參數缺少或錯誤) </br>
+*				  1001:USER_TOKEN_INVALID (userToken invalid) </br>
 *                 11099:OPERATION_FAIL  </br>
 * @apiSuccess     {String}  message  錯誤訊息
 * @apiSuccess     {JsonArray}  kioskReports kioskReports
 *
 * @apiUse VMSServerResponse_Success_Kiosk_Reports
 * @apiUse UserResponse_Invalid_parameter
+* @apiUse Response_Operation_Fail
+* @apiUse UserResponse_user_token_invalid
 */
 func (cc *VmsController) FetchVmsKioskReports(c *gin.Context) {
 	var data apiForms.VMSServerKioskReportsFetchDataValidate
@@ -90,6 +93,18 @@ func (cc *VmsController) FetchVmsKioskReports(c *gin.Context) {
 		c.Abort()
 		return
 	}
+
+	checkResult, queryUser := userModel.UserTokenCheck(data.UserToken)
+	_ = queryUser
+	switch checkResult {
+	case 1:
+	case 2:
+	case 1001:
+		c.JSON(200, gin.H{"code": 1001, "message": "USER_TOKEN_INVALID"})
+		c.Abort()
+		return
+	}
+
 	kioskReports, err := vmsServerModel.GetAllKioskReports()
 	if err != nil {
 		c.JSON(200, gin.H{"code": 11099, "message": "OPERATION_FAIL, " + err.Error()})
@@ -111,12 +126,15 @@ func (cc *VmsController) FetchVmsKioskReports(c *gin.Context) {
 * @apiSuccess     {Number} code  錯誤代碼 </br>
 *                 0:SUCCESS (成功) </br>
 *                 1:INVALID_PARAMETERS (參數缺少或錯誤) </br>
+*				  1001:USER_TOKEN_INVALID (userToken invalid) </br>
 *                 11099:OPERATION_FAIL  </br>
 * @apiSuccess     {String}  message  錯誤訊息
 * @apiSuccess     {JsonArray}  kioskDevices kioskDevices
 *
 * @apiUse VMSServerResponse_Success_Kiosk_Devices
 * @apiUse UserResponse_Invalid_parameter
+* @apiUse Response_Operation_Fail
+* @apiUse UserResponse_user_token_invalid
 */
 func (cc *VmsController) FetchVmsKioskDevices(c *gin.Context) {
 	var data apiForms.VMSServerKioskDevicesFetchDataValidate
@@ -128,6 +146,18 @@ func (cc *VmsController) FetchVmsKioskDevices(c *gin.Context) {
 		c.Abort()
 		return
 	}
+
+	checkResult, queryUser := userModel.UserTokenCheck(data.UserToken)
+	_ = queryUser
+	switch checkResult {
+	case 1:
+	case 2:
+	case 1001:
+		c.JSON(200, gin.H{"code": 1001, "message": "USER_TOKEN_INVALID"})
+		c.Abort()
+		return
+	}
+
 	kioskDevices, err := vmsServerModel.GetAllKioskDevices()
 	if err != nil {
 		c.JSON(200, gin.H{"code": 11099, "message": "OPERATION_FAIL, " + err.Error()})

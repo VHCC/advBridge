@@ -76,6 +76,11 @@ func main() {
 		v1.POST("/kioskLocation/fetchAll", kioskLocationController.FetchAllLocation)
 		v1.POST("/kioskLocation/edit", kioskLocationController.EditLocation)
 
+		vmsServerConfigController := new(controllers.GlobalConfigController)
+		v1.POST("/serverConfig/getConfig", vmsServerConfigController.GetGlobalConfig)
+		//v2.GET("/serverConfig/getEnrollUserFlag", vms2ServerConfigController.GetEnrollUserFlag)
+		v1.POST("/serverConfig/updateConfig", vmsServerConfigController.UpdateGlobalConfig)
+		//v2.POST("/serverConfig/listServerMacAddress", vms2ServerConfigController.ListServerMacAddress)
 
 		//vmsFormController := new(controllers.VmsFormController)
 		// ========== VMS ============

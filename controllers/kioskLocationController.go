@@ -32,11 +32,14 @@ func (cc *KioskLocationController) SyncVMSKioskReportsData() {
 * @apiSuccess     {Number} code  錯誤代碼 </br>
 *                 0:SUCCESS (成功) </br>
 *                 1:INVALID_PARAMETERS (參數缺少或錯誤) </br>
+*				  1001:USER_TOKEN_INVALID (userToken invalid) </br>
 *                 11099:OPERATION_FAIL  </br>
 * @apiSuccess     {String}  message  錯誤訊息
 *
 * @apiUse KioskLocationResponse_Success_Create_Remove_Edit
 * @apiUse UserResponse_Invalid_parameter
+* @apiUse Response_Operation_Fail
+* @apiUse UserResponse_user_token_invalid
 */
 func (cc *KioskLocationController) CreateLocation(c *gin.Context) {
 	var data apiForms.KioskLocationCreateDataValidate
@@ -48,6 +51,18 @@ func (cc *KioskLocationController) CreateLocation(c *gin.Context) {
 		c.Abort()
 		return
 	}
+
+	checkResult, queryUser := userModel.UserTokenCheck(data.UserToken)
+	_ = queryUser
+	switch checkResult {
+	case 1:
+	case 2:
+	case 1001:
+		c.JSON(200, gin.H{"code": 1001, "message": "USER_TOKEN_INVALID"})
+		c.Abort()
+		return
+	}
+
 	err := vmsServerModel.CreateKioskLocation(data)
 	if err != nil {
 		c.JSON(200, gin.H{"code": 11099, "message": "OPERATION_FAIL, " + err.Error()})
@@ -69,11 +84,14 @@ func (cc *KioskLocationController) CreateLocation(c *gin.Context) {
 * @apiSuccess     {Number} code  錯誤代碼 </br>
 *                 0:SUCCESS (成功) </br>
 *                 1:INVALID_PARAMETERS (參數缺少或錯誤) </br>
+*				  1001:USER_TOKEN_INVALID (userToken invalid) </br>
 *                 11099:OPERATION_FAIL  </br>
 * @apiSuccess     {String}  message  錯誤訊息
 *
 * @apiUse KioskLocationResponse_Success_Create_Remove_Edit
 * @apiUse UserResponse_Invalid_parameter
+* @apiUse Response_Operation_Fail
+* @apiUse UserResponse_user_token_invalid
 */
 func (cc *KioskLocationController) RemoveLocation(c *gin.Context) {
 	var data apiForms.KioskLocationDeleteDataValidate
@@ -85,6 +103,18 @@ func (cc *KioskLocationController) RemoveLocation(c *gin.Context) {
 		c.Abort()
 		return
 	}
+
+	checkResult, queryUser := userModel.UserTokenCheck(data.UserToken)
+	_ = queryUser
+	switch checkResult {
+	case 1:
+	case 2:
+	case 1001:
+		c.JSON(200, gin.H{"code": 1001, "message": "USER_TOKEN_INVALID"})
+		c.Abort()
+		return
+	}
+
 	err := vmsServerModel.RemoveKioskLocation(data)
 	if err != nil {
 		c.JSON(200, gin.H{"code": 11099, "message": "OPERATION_FAIL, " + err.Error()})
@@ -106,11 +136,14 @@ func (cc *KioskLocationController) RemoveLocation(c *gin.Context) {
 * @apiSuccess     {Number} code  錯誤代碼 </br>
 *                 0:SUCCESS (成功) </br>
 *                 1:INVALID_PARAMETERS (參數缺少或錯誤) </br>
+*				  1001:USER_TOKEN_INVALID (userToken invalid) </br>
 *                 11099:OPERATION_FAIL  </br>
 * @apiSuccess     {String}  message  錯誤訊息
 *
 * @apiUse KioskLocationResponse_Success_FetchAll
 * @apiUse UserResponse_Invalid_parameter
+* @apiUse Response_Operation_Fail
+* @apiUse UserResponse_user_token_invalid
 */
 func (cc *KioskLocationController) FetchAllLocation(c *gin.Context) {
 	var data apiForms.KioskLocationFetchAllDataValidate
@@ -122,6 +155,18 @@ func (cc *KioskLocationController) FetchAllLocation(c *gin.Context) {
 		c.Abort()
 		return
 	}
+
+	checkResult, queryUser := userModel.UserTokenCheck(data.UserToken)
+	_ = queryUser
+	switch checkResult {
+	case 1:
+	case 2:
+	case 1001:
+		c.JSON(200, gin.H{"code": 1001, "message": "USER_TOKEN_INVALID"})
+		c.Abort()
+		return
+	}
+
 	kioskLocations, err := vmsServerModel.FetchAllKioskLocation()
 	if err != nil {
 		c.JSON(200, gin.H{"code": 11099, "message": "OPERATION_FAIL, " + err.Error()})
@@ -151,11 +196,14 @@ func (cc *KioskLocationController) FetchAllLocation(c *gin.Context) {
 * @apiSuccess     {Number} code  錯誤代碼 </br>
 *                 0:SUCCESS (成功) </br>
 *                 1:INVALID_PARAMETERS (參數缺少或錯誤) </br>
+*				  1001:USER_TOKEN_INVALID (userToken invalid) </br>
 *                 11099:OPERATION_FAIL  </br>
 * @apiSuccess     {String}  message  錯誤訊息
 *
 * @apiUse KioskLocationResponse_Success_Create_Remove_Edit
 * @apiUse UserResponse_Invalid_parameter
+* @apiUse Response_Operation_Fail
+* @apiUse UserResponse_user_token_invalid
 */
 func (cc *KioskLocationController) EditLocation(c *gin.Context) {
 	var data apiForms.KioskLocationUpdateDataValidate
@@ -167,6 +215,18 @@ func (cc *KioskLocationController) EditLocation(c *gin.Context) {
 		c.Abort()
 		return
 	}
+
+	checkResult, queryUser := userModel.UserTokenCheck(data.UserToken)
+	_ = queryUser
+	switch checkResult {
+	case 1:
+	case 2:
+	case 1001:
+		c.JSON(200, gin.H{"code": 1001, "message": "USER_TOKEN_INVALID"})
+		c.Abort()
+		return
+	}
+
 	err := vmsServerModel.UpdateKioskLocation(data)
 	if err != nil {
 		c.JSON(200, gin.H{"code": 11099, "message": "OPERATION_FAIL, " + err.Error()})

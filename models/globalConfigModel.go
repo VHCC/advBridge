@@ -1,10 +1,13 @@
 package models
 
 import (
+	"advBridge/apiForms"
+	"encoding/json"
 	logv "github.com/sirupsen/logrus"
 	"gopkg.in/mgo.v2/bson"
 	"net"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -156,6 +159,56 @@ func FindFromDB() (response map[string]interface{}, err error) {
 		response = globalConfig.Bundle
 	}
 	response["lastModifiedUnixTimeStamp"] = globalConfig.LastModifiedUnixTimeStamp
+
+	return response, err
+}
+
+func (m *GlobalConfigModel) UpdateToDB(data apiForms.UpdateGlobalConfigDataValidate) (response map[string]interface{}, err error) {
+	collection := dbConnect.UseTable(DB_Name, DB_Table_Global_Config)
+	defer collection.Database.Session.Close()
+
+	res2B, _ := json.Marshal(data)
+
+	var updateRequest map[string]interface{}
+	err = bson.UnmarshalJSON([]byte(string(res2B)), &updateRequest)
+	updateRequest["lastModifiedUnixTimeStamp"] = time.Now().Unix()
+
+	var globalConfig GlobalConfig
+	if err = collection.Find(bson.M{}).One(&globalConfig); err != nil {
+		logv.Error(err)
+	}
+
+	myMap := updateRequest["bundle"].(map[string]interface{})
+	var updateRequestSub = make(map[string]interface{})
+
+	for key, value := range globalConfig.Bundle {
+		updateRequestSub[strings.ToLower(key)] = value
+	}
+
+	for key, value := range myMap {
+		updateRequestSub[strings.ToLower(key)] = value
+	}
+
+	logv.Info(updateRequestSub)
+
+	updateRequest["bundle"] = updateRequestSub
+
+	err = collection.UpdateId(globalConfig.ID, bson.M{"$set": updateRequest})
+	if err != nil {
+		logv.Error("UpdateToDB Response UpdateId err:> ", err)
+		return response, err
+	}
+
+	var globalConfigResp GlobalConfig
+	if err = collection.FindId(globalConfig.ID).One(&globalConfigResp); err != nil {
+		logv.Error(err)
+	}
+
+	response = make(map[string]interface{})
+	if len(globalConfigResp.Bundle) != 0 {
+		response = globalConfigResp.Bundle
+	}
+	response["lastModifiedUnixTimeStamp"] = globalConfigResp.LastModifiedUnixTimeStamp
 
 	return response, err
 }
