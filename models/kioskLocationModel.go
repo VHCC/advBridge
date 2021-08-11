@@ -13,6 +13,7 @@ type KioskLocationModel struct {
 
 type KioskLocation struct {
 	ID         bson.ObjectId `json:"_id" bson:"_id"`
+	DeviceName string `json:"deviceName" bson:"deviceName"`
 	DeviceUUID string        `json:"deviceUUID" bson:"deviceUUID"`
 	Location   string        `json:"location" bson:"location"`
 }
@@ -48,6 +49,7 @@ func (m *VmsServerModel) CreateKioskLocation(data apiForms.KioskLocationCreateDa
 	err = collection.Insert(bson.M{
 		"_id":                 objectIdRoot,
 		"deviceUUID":          data.DeviceUUID,
+		"deviceName":          kioskDevice.DeviceName,
 		"location":            data.Location,
 		"createUnixTimeStamp": time.Now().Unix(),
 	})
@@ -124,7 +126,7 @@ func (m *VmsServerModel) UpdateKioskLocation(data apiForms.KioskLocationUpdateDa
 	}
 
 	err = collection.Update(bson.M{"deviceUUID": *data.DeviceUUID}, bson.M{"$set":
-		bson.M{"location": data.Location}})
+	bson.M{"location": data.Location}})
 
 	if err != nil {
 		logv.Error(err.Error())
@@ -132,4 +134,3 @@ func (m *VmsServerModel) UpdateKioskLocation(data apiForms.KioskLocationUpdateDa
 	}
 	return err
 }
-

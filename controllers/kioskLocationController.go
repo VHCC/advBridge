@@ -139,6 +139,7 @@ func (cc *KioskLocationController) RemoveLocation(c *gin.Context) {
 *				  1001:USER_TOKEN_INVALID (userToken invalid) </br>
 *                 11099:OPERATION_FAIL  </br>
 * @apiSuccess     {String}  message  錯誤訊息
+* @apiSuccess     {JsonArray}  kioskLocations  Kiosk Location
 *
 * @apiUse KioskLocationResponse_Success_FetchAll
 * @apiUse UserResponse_Invalid_parameter

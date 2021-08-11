@@ -19,11 +19,13 @@
  *       "kioskLocations": [
             {
                 "_id": "6110e29691d32fbd0adc1722",
+                "deviceName": "1F Middle Gate",
                 "deviceUUID": "60dbcc5c91d32fd90b06ba9e",
                 "location": "1F Entrance"
             },
             {
                 "_id": "6110e29691d32fbd0adc1724",
+                "deviceName": "AiCS Lobby",
                 "deviceUUID": "60dbcc5c91d32fd90b06ba9f",
                 "location": "2F Lobby"
             }
