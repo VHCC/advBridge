@@ -16,7 +16,7 @@ type VmsController struct {
 
 var vmsServerModel = new(models.VmsServerModel)
 
-func (cc *VmsController) SyncVMSKioskReportsData() {
+func (cc *VmsController) SyncVMSKioskReportsData() (err error){
 	objectID, err := vmsSyncRecordsModel.GenerateNewInstance()
 	err, errCode := vmsServerModel.LoginVMS()
 	if err != nil {
@@ -24,29 +24,30 @@ func (cc *VmsController) SyncVMSKioskReportsData() {
 		switch errCode {
 		case 101:
 			vmsSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Vms Server 連線失敗")
-			break;
+			return err
 		case 104:
 			vmsSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Vms Server 登入失敗")
-			break;
+			return err
 		}
-		return
+		return err
 	}
 	rfidMQTTModel.DisconnectionToRFIDServer()
 	err = rfidMQTTModel.ConnectionToRFIDServer()
 	if err != nil {
 		logv.Error(err.Error())
 		vmsSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Mqtt 連線失敗")
-		return
+		return err
 	}
 
 	vmsServerModel.SyncVMSReportData(objectID)
 	vmsServerModel.SyncVMSKioskDeviceData()
 	vmsServerModel.SyncVMSPersonData()
+	return err
 }
 
 /**
 @api {POST} /api/v1/vmsServer/connectTest VMS Server Connection Test
-@apiDescription VMS Server Connection Test
+@apiDescription VMS Server Connection Test, connect timeout is 3 seconds
 @apiversion 0.0.1
 @apiGroup 003 VMS Server
 @apiName VMS Server Connection Test
@@ -84,6 +85,7 @@ func (cc *VmsController) VmsServerConnectionTest(c *gin.Context) {
 }
 
 /**
+@apiIgnore No Used 20210811
 @api {POST} /api/v1/vmsServer/fetchVMSKioskReports List VMS Kiosk Reports
 @apiDescription List VMS Kiosk Kiosk
 @apiversion 0.0.1

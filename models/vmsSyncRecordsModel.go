@@ -11,17 +11,35 @@ import (
 type VmsSyncRecordsModel struct {
 }
 
+// DataStructure
 type VmsSyncRecords struct {
 	ID                             bson.ObjectId `json:"_id" bson:"_id"`
 	SyncVmsDataCounts              int32         `json:"syncVmsDataCounts" bson:"syncVmsDataCounts"`
 	RFIDDataSendCounts             int32         `json:"RFIDDataSendCounts" bson:"RFIDDataSendCounts"`
 	Status                         string        `json:"status" bson:"status"`
+	FailReason                     string        `json:"failReason" bson:"failReason"`
 	VMSServerProtocol              string        `json:"VMSServer_Protocol" bson:"VMSServer_Protocol"`
 	VMSServerHost                  string        `json:"VMSServer_Host" bson:"VMSServer_Host"`
 	RFIDServerMqttConnectionString string        `json:"RFIDServer_MqttConnectionString" bson:"RFIDServer_MqttConnectionString"`
 	RFIDServerMqttTopic            string        `json:"RFIDServer_MqttTopic" bson:"RFIDServer_MqttTopic"`
 	CreateUnixTimeStamp            int64         `json:"createUnixTimeStamp" bson:"createUnixTimeStamp"`
 }
+
+type VmsSyncRecordsDetail struct {
+	ID                             bson.ObjectId `json:"_id" bson:"_id"`
+	SyncVmsDataCounts              int32         `json:"syncVmsDataCounts" bson:"syncVmsDataCounts"`
+	RFIDDataSendCounts             int32         `json:"RFIDDataSendCounts" bson:"RFIDDataSendCounts"`
+	Status                         string        `json:"status" bson:"status"`
+	FailReason                     string        `json:"failReason" bson:"failReason"`
+	VMSServerProtocol              string        `json:"VMSServer_Protocol" bson:"VMSServer_Protocol"`
+	VMSServerHost                  string        `json:"VMSServer_Host" bson:"VMSServer_Host"`
+	RFIDServerMqttConnectionString string        `json:"RFIDServer_MqttConnectionString" bson:"RFIDServer_MqttConnectionString"`
+	RFIDServerMqttTopic            string        `json:"RFIDServer_MqttTopic" bson:"RFIDServer_MqttTopic"`
+	CreateUnixTimeStamp            int64         `json:"createUnixTimeStamp" bson:"createUnixTimeStamp"`
+
+}
+
+//
 
 var vmsSyncRecordsModel = new(VmsSyncRecordsModel)
 
@@ -67,7 +85,7 @@ func (m *VmsSyncRecordsModel) UpdateStatus(recordsUUID string, status string, re
 	defer collection.Database.Session.Close()
 
 	err = collection.UpdateId(bson.ObjectIdHex(recordsUUID), bson.M{"$set": bson.M{
-		"status": status,
+		"status":     status,
 		"failReason": reason,
 	}})
 	if err != nil {
@@ -77,57 +95,105 @@ func (m *VmsSyncRecordsModel) UpdateStatus(recordsUUID string, status string, re
 	return err
 }
 
-func (m *VmsSyncRecordsModel) CreateKioskLocation(data apiForms.KioskLocationCreateDataValidate) (err error) {
-	collectionKioskDevice := dbConnect.UseTable(DB_Name, DB_Table_ADV_SYNC_VMS_KIOSK_DEVICES)
-	defer collectionKioskDevice.Database.Session.Close()
+// VMS 同步資訊
+func (m *VmsSyncRecordsModel) ListDataByP(data apiForms.ListByPVmsSyncRecordsDataValidate) (resultsByPage []VmsSyncRecords,
+	resultsTotal []VmsSyncRecords, err error, errcode int) {
+	collectionKD := dbConnect.UseTable(DB_Name, DB_Table_ADV_VMS_SYNC_RECORDS)
+	defer collectionKD.Database.Session.Close()
 
-	collection := dbConnect.UseTable(DB_Name, DB_Table_ADV_KIOSK_LOCATION)
-	defer collection.Database.Session.Close()
-
-	kioskDevice := KioskDeviceInfo{}
-
-	if _IsObjectIdHex := bson.IsObjectIdHex(*data.DeviceUUID); !_IsObjectIdHex {
-		err = errors.New("invalid input to ObjectIdHex: " + *data.DeviceUUID)
-		logv.Error(err.Error())
-		return errors.New(err.Error())
+	isDESC := 1
+	if *data.Desc {
+		isDESC = 1
+	} else {
+		isDESC = -1
 	}
 
-	err = collectionKioskDevice.FindId(bson.ObjectIdHex(*data.DeviceUUID)).One(&kioskDevice)
+	match_stage := bson.M{}
+
+	pipeline := []bson.M{
+		{
+			"$match": match_stage,
+		},
+		{
+			"$sort": bson.M{
+				*data.SortBy: isDESC,
+			},
+		},
+	}
+
+	pipe := collectionKD.Pipe(pipeline)
+	err = pipe.All(&resultsTotal)
 	if err != nil {
-		logv.Error(err.Error())
-		return errors.New("Kiosk Device UUID is not exist:> " + *data.DeviceUUID)
+		logv.Error("Find Response FindId err:> ", err)
 	}
 
-	err = collection.Find(bson.M{"deviceUUID": data.DeviceUUID}).One(&kioskDevice)
-	if err == nil {
-		logv.Error("this location is exist:> ", data.DeviceUUID)
-		return errors.New("this location is exist:> " + *data.DeviceUUID)
+	if *data.Count != -1 {
+		for i := 0; i < *data.Count; i++ {
+			if *data.StartIndex+i >= len(resultsTotal) {
+				break
+			}
+			resultsByPage = append(resultsByPage, resultsTotal[*data.StartIndex+i])
+		}
+	} else {
+		return resultsTotal, resultsTotal, err, 0
 	}
 
-	objectIdRoot := bson.NewObjectId()
-	err = collection.Insert(bson.M{
-		"_id":                 objectIdRoot,
-		"deviceUUID":          data.DeviceUUID,
-		"location":            data.Location,
-		"createUnixTimeStamp": time.Now().Unix(),
-	})
-
-	if err != nil {
-		logv.Error(err.Error())
-		return err
-	}
-	return err
+	return resultsByPage, resultsTotal, err, 0
 }
 
-func (m *VmsSyncRecordsModel) FetchAllKioskLocation() (results []KioskLocation, err error) {
-	collection := dbConnect.UseTable(DB_Name, DB_Table_ADV_KIOSK_LOCATION)
-	defer collection.Database.Session.Close()
+// VMS 同步資訊，詳細資料
+func (m *VmsSyncRecordsModel) GetDetailDataByP(data apiForms.ListByPVmsSyncRecordsDetailDataValidate) (resultsByPage []KioskReportResponse,
+	resultsTotal []KioskReportResponse, vmsSyncRecord VmsSyncRecords, err error, errcode int) {
 
-	err = collection.Find(bson.M{}).All(&results)
+	collectionSR := dbConnect.UseTable(DB_Name, DB_Table_ADV_VMS_SYNC_RECORDS)
+	defer collectionSR.Database.Session.Close()
 
+	err = collectionSR.FindId(bson.ObjectIdHex(*data.RecordUUID)).One(&vmsSyncRecord)
 	if err != nil {
 		logv.Error(err.Error())
-		return results, err
+		return resultsTotal, resultsTotal, vmsSyncRecord, err, 0
 	}
-	return results, err
+	collection := dbConnect.UseTable(DB_Name, DB_Table_ADV_SYNC_VMS_KIOSK_REPORTS)
+	defer collection.Database.Session.Close()
+
+	isDESC := 1
+	if *data.Desc {
+		isDESC = 1
+	} else {
+		isDESC = -1
+	}
+
+	match_stage := bson.M{
+		"recordsUUID": data.RecordUUID,
+	}
+
+	pipeline := []bson.M{
+		{
+			"$match": match_stage,
+		},
+		{
+			"$sort": bson.M{
+				*data.SortBy: isDESC,
+			},
+		},
+	}
+
+	pipe := collection.Pipe(pipeline)
+	err = pipe.All(&resultsTotal)
+	if err != nil {
+		logv.Error("Find Response FindId err:> ", err)
+	}
+
+	if *data.Count != -1 {
+		for i := 0; i < *data.Count; i++ {
+			if *data.StartIndex+i >= len(resultsTotal) {
+				break
+			}
+			resultsByPage = append(resultsByPage, resultsTotal[*data.StartIndex+i])
+		}
+	} else {
+		return resultsTotal, resultsTotal, vmsSyncRecord, err, 0
+	}
+
+	return resultsByPage, resultsTotal, vmsSyncRecord, err, 0
 }

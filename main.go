@@ -67,6 +67,7 @@ func main() {
 		v1.POST("/vmsServer/fetchVMSKioskDevices", vmsServerController.FetchVmsKioskDevices)
 
 		mqttTopicController := new(controllers.TopicController)
+		v1.POST("/mqttServer/connectTest", mqttTopicController.ConnectTest)
 		//mqttTopicController.Init()
 
 		kioskLocationController := new(controllers.KioskLocationController)
@@ -80,6 +81,11 @@ func main() {
 		//v2.GET("/serverConfig/getEnrollUserFlag", vms2ServerConfigController.GetEnrollUserFlag)
 		v1.POST("/serverConfig/updateConfig", vmsServerConfigController.UpdateGlobalConfig)
 		//v2.POST("/serverConfig/listServerMacAddress", vms2ServerConfigController.ListServerMacAddress)
+
+		vmsSyncRecordsController := new(controllers.VmsSyncRecordsController)
+		v1.POST("/vmsSyncRecords/listVmsSyncRecords", vmsSyncRecordsController.ListVmsSyncRecordsByParameter)
+		v1.POST("/vmsSyncRecords/getVmsSyncRecordsDetail", vmsSyncRecordsController.ListVmsSyncRecordsDetailByParameter)
+		v1.POST("/vmsSyncRecords/requestSyncWithVMS", vmsSyncRecordsController.RequestSyncWithVMS)
 
 		//vmsFormController := new(controllers.VmsFormController)
 		// ========== VMS ============

@@ -134,3 +134,31 @@ func sub(client mqtt.Client) {
 	token.Wait()
 	fmt.Printf("Subscribed to topic: %s", RFIDTopic)
 }
+
+// ========== Test
+func (m *RFIDMQTTModel) TestConnectionToRFIDServer(
+	mqttConnectionString string,
+	rfidServerUsername string,
+	rfidServerPassword string,
+	) (err error) {
+
+	//var broker = "104.215.147.159"
+	//var port = 1883
+	opts := mqtt.NewClientOptions()
+	//opts.AddBroker(fmt.Sprintf("tcp://%s:%d", broker, port))
+	opts.AddBroker(mqttConnectionString)
+	timeout, _ := time.ParseDuration("3s");
+	opts.SetClientID(bson.NewObjectId().Hex())
+	opts.SetUsername(rfidServerUsername)
+	opts.SetPassword(rfidServerPassword)
+	//opts.SetDefaultPublishHandler(messagePubHandler)
+	opts.SetConnectTimeout(timeout)
+	//opts.OnConnect = connectHandler
+	//opts.OnConnectionLost = connectLostHandler
+	client := mqtt.NewClient(opts)
+	if token := client.Connect(); token.Wait() && token.Error() != nil {
+		logv.Error(token.Error().Error())
+		return errors.New(token.Error().Error())
+	}
+	return nil
+}
