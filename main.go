@@ -143,7 +143,7 @@ func main() {
 				select {
 				case t5 := <-ticker5mv1.C:
 					_ = t5
-					mqttTopicController.SendDataToServer()
+					//mqttTopicController.SendDataToServer()
 					//logv.Info("Tick 5 min at:> ", t5)
 					//logv.Info(" === CheckKioskDeviceStatus === ")
 					//atLicenceController.CheckKioskDeviceStatus()

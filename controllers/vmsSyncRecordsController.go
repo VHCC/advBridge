@@ -181,7 +181,7 @@ var vmsServerController = new(VmsController)
 * @apiUse UserResponse_user_token_invalid
 */
 func (cc *VmsSyncRecordsController) RequestSyncWithVMS(c *gin.Context) {
-	var data apiForms.ListByPVmsSyncRecordsDetailDataValidate
+	var data apiForms.RequestSyncWithVMSDataValidate
 
 	// formData validation
 	if c.ShouldBind(&data) != nil {
