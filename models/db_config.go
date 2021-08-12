@@ -69,7 +69,7 @@ var db_port = FloatToString(setting_db_json["port"].(float64))
 
 var server = db_host + ":" + db_port
 var dbConnect = NewConnection(server, setting_db_json)
-var msSQLConnect = NewMSSQLConnection()
+//var msSQLConnect = NewMSSQLConnection()
 var err = initGlobalConfigModel()
 var SERVER_MODE = "edge"
 
@@ -83,6 +83,7 @@ var DB_Table_ADV_SYNC_VMS_PERSON = "bridge_adv_sync_vms_person"
 
 var DB_Table_ADV_KIOSK_LOCATION = "bridge_adv_kiosk_location"
 var DB_Table_ADV_VMS_SYNC_RECORDS = "bridge_adv_vms_sync_records"
+var DB_Table_ADV_HR_SYNC_RECORDS = "bridge_adv_hr_sync_records"
 
 var DB_Table_User = "users"
 var DB_Table_Project = "projects"

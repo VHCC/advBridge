@@ -17,23 +17,107 @@ type MsSQLController struct {
 var msSQLModel = new(models.MsSQLModel)
 
 
-func (cc *MsSQLController) SyncHRDatabase() {
-
+func (cc *MsSQLController) SyncHRDatabase() (){
+	objectID, err := hrSyncRecordsModel.GenerateNewInstance()
 	err, errCode := vmsServerModel.LoginVMS()
 	if err != nil {
-		logv.Info(errCode)
-	//	logv.Error(err.Error() + ", code:> ", errCode)
-	//	switch errCode {
-	//	case 101:
-	//		vmsSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Vms Server 連線失敗")
-	//		return err
-	//	case 104:
-	//		vmsSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Vms Server 登入失敗")
-	//		return err
-	//	}
-	//	return err
+		logv.Error(err.Error() + ", code:> ", errCode)
+		switch errCode {
+		case 101:
+			hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Vms Server 連線失敗")
+			return
+		case 104:
+			hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Vms Server 登入失敗")
+			return
+		}
+		return
 	}
-	msSQLModel.SyncHRDB()
+
+	conn, err := msSQLModel.ConnectBySystem()
+	if err != nil {
+		hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "HR Server 失敗, " + err.Error())
+		return
+	}
+	msSQLModel.SyncHRDB(conn)
+}
+
+
+
+
+/**
+@api {POST} /hrSyncRecords/requestSyncWithHR Request Sync With HR Server
+@apiDescription Request Sync With HR
+@apiversion 0.0.1
+@apiGroup 007 HR Server Sync Records
+@apiName Request Sync With HR Server
+
+@apiUse RequestSyncWithHRDataValidate
+
+* @apiSuccess     {Number} code  錯誤代碼 </br>
+*                 0:SUCCESS (成功) </br>
+*                 1:INVALID_PARAMETERS (參數缺少或錯誤) </br>
+*                 2001:CONNECT_ERROR (參數缺少或錯誤) </br>
+*                 11099:OPERATION_FAIL  </br>
+* @apiSuccess     {String}  message  錯誤訊息
+*
+* @apiUse HRServerResponse_Success
+* @apiUse UserResponse_Invalid_parameter
+* @apiUse Response_Operation_Fail
+* @apiUse HRServerResponse_Connect_Err
+*/
+func (cc *MsSQLController) RequestSyncHRDatabase(c *gin.Context){
+	var data apiForms.RequestSyncWithHRDataValidate
+
+	// formData validation
+	if c.ShouldBind(&data) != nil {
+		logv.Error("ShouldBind err:> ", c.Errors)
+		c.JSON(200, gin.H{"code": 1, "message": "INVALID_PARAMETERS"})
+		c.Abort()
+		return
+	}
+
+	checkResult, queryUser := userModel.UserTokenCheck(data.UserToken)
+	_ = queryUser
+	switch checkResult {
+	case 1:
+	case 2:
+	case 1001:
+		c.JSON(200, gin.H{"code": 1001, "message": "USER_TOKEN_INVALID"})
+		c.Abort()
+		return
+	}
+
+
+	objectID, err := hrSyncRecordsModel.GenerateNewInstance()
+	err, errCode := vmsServerModel.LoginVMS()
+	if err != nil {
+		logv.Error(err.Error() + ", code:> ", errCode)
+		switch errCode {
+		case 101:
+			hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Vms Server 連線失敗")
+		case 104:
+			hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Vms Server 登入失敗")
+		}
+		c.JSON(200, gin.H{"code": 2001, "message": "CONNECT_ERROR, " + err.Error()})
+		c.Abort()
+		return
+	}
+
+	conn, err := msSQLModel.ConnectBySystem()
+	if err != nil {
+		hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "HR Server 失敗, " + err.Error())
+		c.JSON(200, gin.H{"code": 2001, "message": "CONNECT_ERROR, " + err.Error()})
+		c.Abort()
+		return
+	}
+	err = msSQLModel.SyncHRDB(conn)
+	if err != nil {
+		hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Sync 失敗, " + err.Error())
+		c.JSON(200, gin.H{"code": 11099, "message": "OPERATION_FAIL, " + err.Error()})
+		c.Abort()
+		return
+	}
+	c.JSON(200, gin.H{"code": 0, "message": "SUCCESS"})
 }
 
 /**
@@ -68,6 +152,7 @@ func (cc *MsSQLController) MSSQLConnectionTest(c *gin.Context) {
 
 	_, err := msSQLModel.ConnectionTest(data.Host, data.AccountID, data.Password, data.DBName)
 	if err != nil {
+		logv.Info("QQQQQ")
 		c.JSON(200, gin.H{"code": 2001, "message": "CONNECT_ERROR, " + err.Error()})
 		c.Abort()
 		return

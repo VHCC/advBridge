@@ -47,7 +47,7 @@ func (topic *TopicController) SendDataToServer() {
 @api {POST} /api/v1//mqttServer/connectTest MQTT Server Connection Test
 @apiDescription MQTT Server Connection Test
 @apiversion 0.0.1
-@apiGroup 007 MQTT Server
+@apiGroup 008 MQTT Server
 @apiName MQTT Server Connection Test
 
 @apiUse MQTTServerTestDataValidate

@@ -86,6 +86,11 @@ func main() {
 		v1.POST("/vmsSyncRecords/getVmsSyncRecordsDetail", vmsSyncRecordsController.ListVmsSyncRecordsDetailByParameter)
 		v1.POST("/vmsSyncRecords/requestSyncWithVMS", vmsSyncRecordsController.RequestSyncWithVMS)
 
+		hrSyncRecordsController := new(controllers.HrSyncRecordsController)
+		v1.POST("/hrSyncRecords/listHrSyncRecords", hrSyncRecordsController.ListHRSyncRecordsByParameter)
+		v1.POST("/hrSyncRecords/listHrSyncRecordsDetail", hrSyncRecordsController.ListHRSyncRecordsDetailByParameter)
+		v1.POST("/hrSyncRecords/requestSyncWithHR", msSQLController.RequestSyncHRDatabase)
+
 		//vmsFormController := new(controllers.VmsFormController)
 		// ========== VMS ============
 		//v1.POST("/form/createForm", vmsFormController.CreateForm)

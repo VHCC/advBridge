@@ -25,19 +25,19 @@ type VmsSyncRecords struct {
 	CreateUnixTimeStamp            int64         `json:"createUnixTimeStamp" bson:"createUnixTimeStamp"`
 }
 
-type VmsSyncRecordsDetail struct {
-	ID                             bson.ObjectId `json:"_id" bson:"_id"`
-	SyncVmsDataCounts              int32         `json:"syncVmsDataCounts" bson:"syncVmsDataCounts"`
-	RFIDDataSendCounts             int32         `json:"RFIDDataSendCounts" bson:"RFIDDataSendCounts"`
-	Status                         string        `json:"status" bson:"status"`
-	FailReason                     string        `json:"failReason" bson:"failReason"`
-	VMSServerProtocol              string        `json:"VMSServer_Protocol" bson:"VMSServer_Protocol"`
-	VMSServerHost                  string        `json:"VMSServer_Host" bson:"VMSServer_Host"`
-	RFIDServerMqttConnectionString string        `json:"RFIDServer_MqttConnectionString" bson:"RFIDServer_MqttConnectionString"`
-	RFIDServerMqttTopic            string        `json:"RFIDServer_MqttTopic" bson:"RFIDServer_MqttTopic"`
-	CreateUnixTimeStamp            int64         `json:"createUnixTimeStamp" bson:"createUnixTimeStamp"`
-
-}
+//type VmsSyncRecordsDetail struct {
+//	ID                             bson.ObjectId `json:"_id" bson:"_id"`
+//	SyncVmsDataCounts              int32         `json:"syncVmsDataCounts" bson:"syncVmsDataCounts"`
+//	RFIDDataSendCounts             int32         `json:"RFIDDataSendCounts" bson:"RFIDDataSendCounts"`
+//	Status                         string        `json:"status" bson:"status"`
+//	FailReason                     string        `json:"failReason" bson:"failReason"`
+//	VMSServerProtocol              string        `json:"VMSServer_Protocol" bson:"VMSServer_Protocol"`
+//	VMSServerHost                  string        `json:"VMSServer_Host" bson:"VMSServer_Host"`
+//	RFIDServerMqttConnectionString string        `json:"RFIDServer_MqttConnectionString" bson:"RFIDServer_MqttConnectionString"`
+//	RFIDServerMqttTopic            string        `json:"RFIDServer_MqttTopic" bson:"RFIDServer_MqttTopic"`
+//	CreateUnixTimeStamp            int64         `json:"createUnixTimeStamp" bson:"createUnixTimeStamp"`
+//
+//}
 
 //
 

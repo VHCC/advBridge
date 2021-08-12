@@ -8,13 +8,13 @@ import (
 	logv "github.com/sirupsen/logrus"
 )
 
-type VmsSyncRecordsController struct {
+type HrSyncRecordsController struct {
 	SessionID string
 	//Messages chan frs.FRSWSResponse
 	Socket gowebsocket.Socket
 }
 
-var vmsSyncRecordsModel = new(models.VmsSyncRecordsModel)
+var hrSyncRecordsModel = new(models.HrSyncRecordsModel)
 
 /**
 @api {POST} /api/v1/vmsSyncRecords/listVmsSyncRecords List Vms Sync Records
@@ -39,7 +39,7 @@ var vmsSyncRecordsModel = new(models.VmsSyncRecordsModel)
 * @apiUse Response_Operation_Fail
 * @apiUse UserResponse_user_token_invalid
 */
-func (cc *VmsSyncRecordsController) ListVmsSyncRecordsByParameter(c *gin.Context) {
+func (cc *HrSyncRecordsController) ListHRSyncRecordsByParameter(c *gin.Context) {
 	var data apiForms.ListByPVmsSyncRecordsDataValidate
 
 	// formData validation
@@ -110,7 +110,7 @@ func (cc *VmsSyncRecordsController) ListVmsSyncRecordsByParameter(c *gin.Context
 * @apiUse Response_Operation_Fail
 * @apiUse UserResponse_user_token_invalid
 */
-func (cc *VmsSyncRecordsController) ListVmsSyncRecordsDetailByParameter(c *gin.Context) {
+func (cc *HrSyncRecordsController) ListHRSyncRecordsDetailByParameter(c *gin.Context) {
 	var data apiForms.ListByPVmsSyncRecordsDetailDataValidate
 
 	// formData validation
@@ -156,7 +156,6 @@ func (cc *VmsSyncRecordsController) ListVmsSyncRecordsDetailByParameter(c *gin.C
 		"dataCounts": len(syncKioskReportsTotal)})
 }
 
-var vmsServerController = new(VmsController)
 
 
 /**
@@ -180,7 +179,7 @@ var vmsServerController = new(VmsController)
 * @apiUse HRServerResponse_Connect_Err
 * @apiUse UserResponse_user_token_invalid
 */
-func (cc *VmsSyncRecordsController) RequestSyncWithVMS(c *gin.Context) {
+func (cc *HrSyncRecordsController) RequestSyncWithHR(c *gin.Context) {
 	var data apiForms.RequestSyncWithVMSDataValidate
 
 	// formData validation
@@ -205,9 +204,11 @@ func (cc *VmsSyncRecordsController) RequestSyncWithVMS(c *gin.Context) {
 
 	err := vmsServerController.SyncVMSKioskReportsData()
 	if err != nil {
-		c.JSON(200, gin.H{"code": 2001, "message": "CONNECT_ERROR, " + err.Error()})
-		c.Abort()
-		return
+		if err != nil {
+			c.JSON(200, gin.H{"code": 2001, "message": "CONNECT_ERROR, " + err.Error()})
+			c.Abort()
+			return
+		}
 	}
 	c.JSON(200, gin.H{"code": 0, "message": "SUCCESS"})
 }

@@ -3,12 +3,13 @@ package models
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	logv "github.com/sirupsen/logrus"
 	"gopkg.in/mgo.v2/bson"
+	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -21,10 +22,17 @@ type ADVUser struct {
 	CreateUnixTimeStamp int64         `json:"createUnixTimeStamp" bson:"createUnixTimeStamp"`
 }
 
-type HrSyncRecords struct {
-}
-
 type MsSQLModel struct{}
+
+var wg sync.WaitGroup
+
+func showData(txt string) {
+	for i := 0; i < 5; i++ {
+		runtime.Gosched()
+		fmt.Println("RealOutput==>", txt)
+	}
+	wg.Done()
+}
 
 func (m *MsSQLModel) ConnectionTest(
 	host string, account string, pwd string, DBName string) (conn *sql.DB, err error) {
@@ -34,32 +42,67 @@ func (m *MsSQLModel) ConnectionTest(
 	//logv.Info(DBName)
 	//defer conn.Close()
 
-	//connectString := "sqlserver://"+account+":"+pwd +"@"+host+":1433??database=" +DBName+"&connection+timeout=1"
-	conn, err = sql.Open("mssql",
-		"server="+host+
-			";port=1433"+
-			";user id="+account+
-			";password="+pwd+
-			";database="+DBName)
+	connectString := "sqlserver://"+account+":"+pwd +"@"+host+":1433??database=" +DBName+"&dial+timeout=3"
+	//conn, err = sql.Open("mssql",
+	//	"server="+host+
+	//		//";port=1433"+
+	//		";user id="+account+
+	//		";password="+pwd+
+	//		";database="+DBName)
+
+	logv.Info(connectString)
+	//conn, err = sql.Open("sqlserver", u.String())
+	conn, err = sql.Open("sqlserver", connectString)
 	defer conn.Close()
 	if err != nil {
-		logv.Info("QQQ3")
 		logv.Error("ConnectionHRTest, Connecting Error:> ", err)
 		return conn, err
 	}
 
-	tick := time.Tick(3 * time.Second)
-	after := time.After(7 * time.Second)
-	fmt.Println("start second:",time.Now().Second())
-	for {
-		select {
-		case <-tick:
-			fmt.Println("3 second over:", time.Now().Second())
-			return conn, errors.New("connect Timeout:> " + host)
-		case <-after:
-			fmt.Println("7 second over:", time.Now().Second())
-			return
-		}
+	//var bgCtx = context.TODO()
+	//var ctx2SecondTimeout, cancelFunc2SecondTimeout = context.WithTimeout(bgCtx, time.Second*3)
+	//defer cancelFunc2SecondTimeout()
+
+	err = conn.Ping()
+	if err != nil {
+		logv.Error("ConnectionHRTest, Connecting Error:> ", err)
+		conn.Close()
+		return conn, err
+	}
+
+	//if host != "172.20.2.85" {
+	//	logv.Error("ConnectionHRTest, Connecting Error:> ", errors.New("connect Timeout:> " + host))
+	//	return conn, errors.New("connect Timeout:> " + host)
+	//}
+
+	logv.Info("ConnectionHRTest, MSSQL :> ", host+":1433")
+	return conn, err
+}
+
+func (m *MsSQLModel) ConnectBySystem() (conn *sql.DB, err error) {
+	collectionConfig := dbConnect.UseTable(DB_Name, DB_Table_Global_Config)
+	defer collectionConfig.Database.Session.Close()
+
+	var globalConfig GlobalConfig
+
+	err = collectionConfig.Find(bson.M{}).One(&globalConfig)
+	SQLServerHost := globalConfig.Bundle["HRServer_SQLServerHost"].(string)
+	SQLServerAccount := globalConfig.Bundle["HRServer_Account"].(string)
+	SQLServerPassword := globalConfig.Bundle["HRServer_Password"].(string)
+	SQLServerDBName := globalConfig.Bundle["HRServer_DatabaseName"].(string)
+
+	conn, err = sql.Open("mssql",
+		//"server=" + SQLServerHost +
+		"server=" + SQLServerHost +
+			";port=1433" +
+			";user id=" + SQLServerAccount +
+			";password=" + SQLServerPassword +
+			";database=" + SQLServerDBName)
+
+	defer conn.Close()
+	if err != nil {
+		logv.Error("ConnectionHRTest, Connecting Error:> ", err)
+		return conn, err
 	}
 
 	var bgCtx = context.Background()
@@ -68,10 +111,10 @@ func (m *MsSQLModel) ConnectionTest(
 
 	err = conn.PingContext(ctx2SecondTimeout)
 	if err != nil {
-		logv.Error("ConnectionHRTest, Connecting Error:> ", err)
+		logv.Error("ConnectBySystem, Connecting Error:> ", err)
 		return conn, err
 	}
-	logv.Info("ConnectionHRTest, MSSQL :> ", host+":1433")
+	logv.Info("ConnectBySystem, MSSQL :> ", SQLServerHost+":1433")
 	return conn, err
 }
 
@@ -88,7 +131,7 @@ func isContainsRFID(personSerialArray []string, s []string, rfid string) (isCont
 	return false, "", s, personSerialArray
 }
 
-func (m *MsSQLModel) SyncHRDB() (err error) {
+func (m *MsSQLModel) SyncHRDB(conn *sql.DB) (err error) {
 	collectionVP := dbConnect.UseTable(DB_Name, DB_Table_ADV_SYNC_VMS_PERSON)
 	defer collectionVP.Database.Session.Close()
 
@@ -119,7 +162,7 @@ func (m *MsSQLModel) SyncHRDB() (err error) {
 	collection.DropCollection()
 	defer collection.Database.Session.Close()
 
-	stmt, err := msSQLConnect.Prepare("select * from " + SQLServerTableName)
+	stmt, err := conn.Prepare("select * from " + SQLServerTableName)
 	if err != nil {
 		logv.Println("Query Error", err)
 		return err
@@ -230,3 +273,4 @@ func IsNum(s string) bool {
 	_, err := strconv.ParseFloat(s, 64)
 	return err == nil
 }
+
