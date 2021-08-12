@@ -63,12 +63,12 @@ type KioskReportResponse struct {
 }
 
 type VmsPerson struct {
-	ID              string `json:"_id" bson:"_id"`
-	VmsPersonEmail  string `json:"vmsPersonEmail" bson:"vmsPersonEmail"`
-	VmsPersonMemo   string `json:"vmsPersonMemo" bson:"vmsPersonMemo"`
-	VmsPersonName   string `json:"vmsPersonName" bson:"vmsPersonName"`
-	VmsPersonSerial string `json:"vmsPersonSerial" bson:"vmsPersonSerial"`
-	VmsPersonUnit   string `json:"vmsPersonUnit" bson:"vmsPersonUnit"`
+	ID              bson.ObjectId `json:"_id" bson:"_id"`
+	VmsPersonEmail  string        `json:"vmsPersonEmail" bson:"vmsPersonEmail"`
+	VmsPersonMemo   string        `json:"vmsPersonMemo" bson:"vmsPersonMemo"`
+	VmsPersonName   string        `json:"vmsPersonName" bson:"vmsPersonName"`
+	VmsPersonSerial string        `json:"vmsPersonSerial" bson:"vmsPersonSerial"`
+	VmsPersonUnit   string        `json:"vmsPersonUnit" bson:"vmsPersonUnit"`
 }
 
 type KioskDeviceInfo struct {
@@ -150,7 +150,7 @@ type Vms2Person struct {
 	VMSPersonUnit       string        `json:"vmsPersonUnit" bson:"vmsPersonUnit"`
 	VMSPersonEmail      string        `json:"vmsPersonEmail" bson:"vmsPersonEmail"`
 	VMSPersonMemo       string        `json:"vmsPersonMemo" bson:"vmsPersonMemo"`
-	IsRealName          bool          `json:"-" bson:"isRealName"`
+	IsRealName          bool          `json:"isRealName" bson:"isRealName"`
 	CreateUnixTimestamp int64         `json:"createUnixTimestamp" bson:"createUnixTimestamp"`
 }
 

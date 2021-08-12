@@ -16,7 +16,23 @@ type MsSQLController struct {
 
 var msSQLModel = new(models.MsSQLModel)
 
+
 func (cc *MsSQLController) SyncHRDatabase() {
+
+	err, errCode := vmsServerModel.LoginVMS()
+	if err != nil {
+		logv.Info(errCode)
+	//	logv.Error(err.Error() + ", code:> ", errCode)
+	//	switch errCode {
+	//	case 101:
+	//		vmsSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Vms Server 連線失敗")
+	//		return err
+	//	case 104:
+	//		vmsSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Vms Server 登入失敗")
+	//		return err
+	//	}
+	//	return err
+	}
 	msSQLModel.SyncHRDB()
 }
 

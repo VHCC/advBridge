@@ -38,8 +38,8 @@ func main() {
 
 	// ================ v1 ===================
 	ticker10sv1 := time.NewTicker(1 * 10 * time.Second)
-	ticker1m1 := time.NewTicker(1 * 10 * time.Second)
-	ticker5mv1 := time.NewTicker(5 * 60 * time.Second)
+	ticker1m1 := time.NewTicker(1 * 60 * time.Second)
+	ticker5mv1 := time.NewTicker(5 * 1 * time.Second)
 	v1 := router.Group("/api/v1")
 	{
 		userController := new(controllers.UserController)
@@ -59,7 +59,6 @@ func main() {
 		msSQLController := new(controllers.MsSQLController)
 		v1.POST("/hrServer/connectTest", msSQLController.MSSQLConnectionTest)
 
-
 		vmsServerController := new(controllers.VmsController)
 		vmsServerController.SyncVMSKioskReportsData()
 		v1.POST("/vmsServer/connectTest", vmsServerController.VmsServerConnectionTest)
@@ -67,8 +66,8 @@ func main() {
 		v1.POST("/vmsServer/fetchVMSKioskDevices", vmsServerController.FetchVmsKioskDevices)
 
 		mqttTopicController := new(controllers.TopicController)
-		v1.POST("/mqttServer/connectTest", mqttTopicController.ConnectTest)
 		//mqttTopicController.Init()
+		v1.POST("/mqttServer/connectTest", mqttTopicController.ConnectTest)
 
 		kioskLocationController := new(controllers.KioskLocationController)
 		v1.POST("/kioskLocation/create", kioskLocationController.CreateLocation)
@@ -137,12 +136,13 @@ func main() {
 
 		//vmsRootController := new(controllers.VmsRootController)
 		//v1.POST("/root/getRootDashboardInfo", vmsRootController.GetDashboardInfo)
-
+		//msSQLController.SyncHRDatabase()
 		go func() {
 			for {
 				select {
 				case t5 := <-ticker5mv1.C:
 					_ = t5
+					//msSQLController.SyncHRDatabase()
 					//mqttTopicController.SendDataToServer()
 					//logv.Info("Tick 5 min at:> ", t5)
 					//logv.Info(" === CheckKioskDeviceStatus === ")
@@ -163,9 +163,9 @@ func main() {
 					//
 					if nowTimeStamp.Unix() > targetTimeStamp.Unix() {
 					}
-					case t1m := <-ticker1m1.C:
-						_ = t1m
-						vmsServerController.SyncVMSKioskReportsData()
+				case t1m := <-ticker1m1.C:
+					_ = t1m
+					vmsServerController.SyncVMSKioskReportsData()
 				}
 			}
 		}()

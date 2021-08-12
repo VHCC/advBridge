@@ -17,11 +17,19 @@ type VmsServerModel struct {
 	userToken string
 }
 
+var MainProtocal string
+var MainHost string
+var MainUserToken string
+
 // Constants
 const API_login = "/api/v1/user/loginUser"
 const API_listKRByPData = "/api/v2/vmsKioskReports/listKioskReportsByParameter"
 const API_listKioskByPData = "/api/v2/vmsKioskDevice/listKioskDevicesByParameter"
 const API_listPersonByPData = "/api/v2/vmsPerson/listVmsPersonByParameter"
+
+const API_updatePersonByPData = "/api/v2/vmsPerson/updateVmsPerson"
+const API_deletePersonByPData = "/api/v2/vmsPerson/deleteVmsPerson"
+const API_createPersonByPData = "/api/v2/vmsPerson/createVmsPerson"
 
 //  ======= login ======
 type VmsLoginBody struct {
@@ -84,6 +92,46 @@ type VmsListPersonByPResponse struct {
 	DataCounts int          `json:"dataCounts"`
 }
 
+// ========= VmsUpdatePersonBody
+type VmsUpdatePersonBody struct {
+	UserToken     string `json:"userToken"`
+	VmsPersonUUID string `json:"vmsPersonUUID"`
+	VmsPersonName string `json:"vmsPersonName"`
+	VmsPersonMemo string `json:"vmsPersonMemo"`
+}
+
+type VmsUpdatePersonResponse struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
+// =========== VmsCreatePersonBody
+type VmsCreatePersonBody struct {
+	UserToken       string `json:"userToken"`
+	VmsPersonUUID   string `json:"vmsPersonUUID"`
+	VmsPersonName   string `json:"vmsPersonName"`
+	VmsPersonUnit   string `json:"vmsPersonUnit"`
+	VmsPersonSerial string `json:"vmsPersonSerial"`
+	VmsPersonMemo   string `json:"vmsPersonMemo"`
+	VmsPersonEmail   string `json:"vmsPersonEmail"`
+}
+
+type VmsCreatePersonResponse struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
+// =========== VmsDeletePersonBody
+type VmsDeletePersonBody struct {
+	UserToken       string `json:"userToken"`
+	VmsPersonUUID   string `json:"vmsPersonUUID"`
+}
+
+type VmsDeletePersonResponse struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
 func (m *VmsServerModel) LoginVMS() (err error, errCode int) {
 	collectionConfig := dbConnect.UseTable(DB_Name, DB_Table_Global_Config)
 	defer collectionConfig.Database.Session.Close()
@@ -136,8 +184,11 @@ func (m *VmsServerModel) LoginVMS() (err error, errCode int) {
 	logv.Info(" === Login Success, USER === ", vmsLoginResponse.User.AccountID)
 
 	m.protocol = protocol
+	MainProtocal = protocol
 	m.host = host
+	MainHost = host
 	m.userToken = vmsLoginResponse.User.UserToken
+	MainUserToken = vmsLoginResponse.User.UserToken
 	return err, 0
 }
 
@@ -298,6 +349,10 @@ func (m *VmsServerModel) SyncVMSPersonData() {
 		logv.Error(errors.New(vmsListPersonByPResponse.Message))
 	}
 	logv.Info(" === ListPersonByP Success, Response === Counts:> ", vmsListPersonByPResponse.DataCounts)
+	collection := dbConnect.UseTable(DB_Name, DB_Table_ADV_SYNC_VMS_PERSON)
+	defer collection.Database.Session.Close()
+	collection.DropCollection()
+
 	for i := 0; i < vmsListPersonByPResponse.DataCounts; i++ {
 		savePersonToBridgeDatabase(vmsListPersonByPResponse.Vms2Person[i])
 	}
@@ -429,30 +484,32 @@ func saveKioskDeviceToBridgeDatabase(KioskData KioskDeviceInfo) () {
 	})
 }
 
-func savePersonToBridgeDatabase(PersonData Vms2Person) () {
+func savePersonToBridgeDatabase(personData Vms2Person) () {
 	collection := dbConnect.UseTable(DB_Name, DB_Table_ADV_SYNC_VMS_PERSON)
 	defer collection.Database.Session.Close()
 
 	person := KioskDeviceInfo{}
 
-	err := collection.FindId(bson.ObjectIdHex(PersonData.ID.Hex())).One(&person)
+	err := collection.FindId(bson.ObjectIdHex(personData.ID.Hex())).One(&person)
 	if err == nil {
 		logv.Info("Update person:> ", person.ID.Hex())
-		err = collection.RemoveId(person.ID.Hex())
-		if err == nil {
+		err = collection.RemoveId(bson.ObjectIdHex(person.ID.Hex()))
+		if err != nil {
 			logv.Error(err.Error())
 		}
 	}
-
+	//logv.Info(personData)
+	//logv.Info(personData.VMSPersonMemo)
+	//logv.Info(personData.VMSPersonSerial)
 	err = collection.Insert(bson.M{
-		"_id":                 PersonData.ID,
-		"vmsPersonSerial":     PersonData.VMSPersonSerial,
-		"vmsPersonName":       PersonData.VMSPersonName,
-		"vmsPersonUnit":       PersonData.VMSPersonUnit,
-		"vmsPersonEmail":      PersonData.VMSPersonEmail,
-		"vmsPersonMemo":       PersonData.VMSPersonMemo,
-		"isRealName":          PersonData.IsRealName,
-		"createUnixTimestamp": PersonData.CreateUnixTimestamp,
+		"_id":                 personData.ID,
+		"vmsPersonSerial":     personData.VMSPersonSerial,
+		"vmsPersonName":       personData.VMSPersonName,
+		"vmsPersonUnit":       personData.VMSPersonUnit,
+		"vmsPersonEmail":      personData.VMSPersonEmail,
+		"vmsPersonMemo":       personData.VMSPersonMemo,
+		"isRealName":          true,
+		"createUnixTimestamp": personData.CreateUnixTimestamp,
 	})
 }
 
@@ -478,4 +535,142 @@ func (m *VmsServerModel) GetAllKioskDevices() (results []KioskDeviceInfoResponse
 		return results, err
 	}
 	return results, err
+}
+
+// ====== manipulate to VMS Person
+func UpdateVMSPersonData(
+	personUUID string,
+	vmsPersonName string,
+	vmsPersonMemo string,
+) (errCode int){
+	updatePersonData := VmsUpdatePersonBody{
+		MainUserToken,
+		personUUID,
+		vmsPersonName,
+		vmsPersonMemo,
+	}
+	updatePersonDataJson, _ := json.Marshal(updatePersonData)
+
+	//logv.Info(updatePersonData)
+
+	client := &http.Client{}
+	req, err := http.NewRequest("POST", MainProtocal+"://"+MainHost+API_updatePersonByPData, bytes.NewBuffer(updatePersonDataJson))
+	if err != nil {
+		logv.Error(err.Error())
+		return
+	}
+	req.Header.Set("Content-Type", "application/json")
+	res, err := client.Do(req)
+	if err != nil {
+		logv.Error(err.Error())
+		return
+	}
+	content, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		logv.Error(err.Error())
+		return
+	}
+	respBody := string(content)
+
+	vmsUpdatePersonResponse := &VmsUpdatePersonResponse{}
+	errq := json.Unmarshal([]byte(respBody), vmsUpdatePersonResponse)
+	_ = errq
+	defer res.Body.Close()
+	if vmsUpdatePersonResponse.Code != 0 {
+		code := strconv.Itoa(vmsUpdatePersonResponse.Code)
+		logv.Error(errors.New(vmsUpdatePersonResponse.Message + ", Code:> " + code))
+		if vmsUpdatePersonResponse.Code == 22001 {
+			return 22001
+		}
+		return 0
+	}
+	logv.Info(" === Update Person Success ===, UUID:> ", personUUID)
+	return 0
+}
+
+func CreateVMSPersonData(
+	personUUID string,
+	vmsPersonName string,
+	vmsPersonUnit string,
+	vmsPersonSerial string,
+	vmsPersonMemo string,
+) {
+	createPersonData := VmsCreatePersonBody{
+		MainUserToken,
+		personUUID,
+		vmsPersonName,
+		vmsPersonUnit,
+		vmsPersonSerial,
+		vmsPersonMemo,
+		"bridgeTest",
+	}
+	createPersonDataJson, _ := json.Marshal(createPersonData)
+
+	client := &http.Client{}
+	req, err := http.NewRequest("POST", MainProtocal+"://"+MainHost+API_createPersonByPData, bytes.NewBuffer(createPersonDataJson))
+	if err != nil {
+		logv.Error(err.Error())
+		return
+	}
+	req.Header.Set("Content-Type", "application/json")
+	res, err := client.Do(req)
+	if err != nil {
+		logv.Error(err.Error())
+		return
+	}
+	content, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		logv.Error(err.Error())
+		return
+	}
+	respBody := string(content)
+
+	vmsCreatePersonResponse := &VmsCreatePersonResponse{}
+	errq := json.Unmarshal([]byte(respBody), vmsCreatePersonResponse)
+	_ = errq
+	defer res.Body.Close()
+	if vmsCreatePersonResponse.Code != 0 {
+		logv.Error(errors.New(vmsCreatePersonResponse.Message))
+		return
+	}
+	logv.Info(" === Create Person Success ===")
+}
+
+func DeleteVMSPersonData(
+	personUUID string,
+) {
+	deletePersonData := VmsDeletePersonBody{
+		MainUserToken,
+		personUUID,
+	}
+	deletePersonDataJson, _ := json.Marshal(deletePersonData)
+
+	client := &http.Client{}
+	req, err := http.NewRequest("POST", MainProtocal+"://"+MainHost+API_deletePersonByPData, bytes.NewBuffer(deletePersonDataJson))
+	if err != nil {
+		logv.Error(err.Error())
+		return
+	}
+	req.Header.Set("Content-Type", "application/json")
+	res, err := client.Do(req)
+	if err != nil {
+		logv.Error(err.Error())
+		return
+	}
+	content, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		logv.Error(err.Error())
+		return
+	}
+	respBody := string(content)
+
+	vmsDeletePersonResponse := &VmsDeletePersonResponse{}
+	errq := json.Unmarshal([]byte(respBody), vmsDeletePersonResponse)
+	_ = errq
+	defer res.Body.Close()
+	if vmsDeletePersonResponse.Code != 0 {
+		logv.Error(errors.New(vmsDeletePersonResponse.Message))
+		return
+	}
+	logv.Info(" === Delete Person Success ===")
 }
