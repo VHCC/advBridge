@@ -32,6 +32,9 @@ var vmsSyncRecordsModel = new(models.VmsSyncRecordsModel)
 *                 11099:OPERATION_FAIL  </br>
 * @apiSuccess     {String}  message  錯誤訊息
 * @apiSuccess     {JsonArray} vmsSyncRecordsData VMS 同步紀錄
+* @apiSuccess     {String} vmsSyncRecordsData-status VMS 同步狀態。<br>
+								1. Success <br>
+								2. Fail
 * @apiSuccess     {Integer} dataCounts VMS 同步紀錄總筆數
 *
 * @apiUse VmsSyncRecordsResponse_List_Success
@@ -102,7 +105,18 @@ func (cc *VmsSyncRecordsController) ListVmsSyncRecordsByParameter(c *gin.Context
 *                 11099:OPERATION_FAIL  </br>
 * @apiSuccess     {String}  message  錯誤訊息
 * @apiSuccess     {JsonObject} vmsSyncRecord VMS 同步紀錄
-* @apiSuccess     {JsonArray} syncKioskReports 人員同步清單
+* @apiSuccess     {JsonArray} syncKioskReports 簽到紀錄同步清單
+* @apiSuccess     {String} syncKioskReports-avalo_status 簽到紀錄狀況。<br>
+							1. filling-out <br>
+							2. check-in <br>
+							3. authorized <br>
+							4. exception
+* @apiSuccess     {String} syncKioskReports-avalo_exception 簽到紀錄例外情形。<br>
+							1. high-fever <br>
+							2. no-mask <br>
+							3. invalid-code <br>
+							4 .authorization-fail <br>
+							5. reject
 * @apiSuccess     {Integer} dataCounts 人員同步清單總筆數
 *
 * @apiUse VmsSyncRecordsResponse_Detail_Success
