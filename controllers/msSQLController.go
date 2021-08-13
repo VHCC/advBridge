@@ -38,7 +38,8 @@ func (cc *MsSQLController) SyncHRDatabase() (){
 		hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "HR Server 失敗, " + err.Error())
 		return
 	}
-	msSQLModel.SyncHRDB(conn)
+	msSQLModel.SyncHRDB(conn, objectID)
+	hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Success", "")
 }
 
 
@@ -87,7 +88,6 @@ func (cc *MsSQLController) RequestSyncHRDatabase(c *gin.Context){
 		return
 	}
 
-
 	objectID, err := hrSyncRecordsModel.GenerateNewInstance()
 	err, errCode := vmsServerModel.LoginVMS()
 	if err != nil {
@@ -110,13 +110,18 @@ func (cc *MsSQLController) RequestSyncHRDatabase(c *gin.Context){
 		c.Abort()
 		return
 	}
-	err = msSQLModel.SyncHRDB(conn)
+
+	syncVmsDataCounts := vmsServerModel.SyncVMSPersonData()
+	hrSyncRecordsModel.UpdateVMSSync(objectID.Hex(), syncVmsDataCounts)
+
+	err = msSQLModel.SyncHRDB(conn, objectID)
 	if err != nil {
 		hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Sync 失敗, " + err.Error())
 		c.JSON(200, gin.H{"code": 11099, "message": "OPERATION_FAIL, " + err.Error()})
 		c.Abort()
 		return
 	}
+	hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Success", "")
 	c.JSON(200, gin.H{"code": 0, "message": "SUCCESS"})
 }
 

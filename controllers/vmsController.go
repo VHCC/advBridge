@@ -40,6 +40,7 @@ func (cc *VmsController) SyncVMSKioskReportsData() (err error){
 	}
 
 	vmsServerModel.SyncVMSReportData(objectID)
+	vmsSyncRecordsModel.UpdateStatus(objectID.Hex(), "Success", "")
 	vmsServerModel.SyncVMSKioskDeviceData()
 	vmsServerModel.SyncVMSPersonData()
 	return err

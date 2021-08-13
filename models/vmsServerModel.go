@@ -97,7 +97,7 @@ type VmsUpdatePersonBody struct {
 	UserToken     string `json:"userToken"`
 	VmsPersonUUID string `json:"vmsPersonUUID"`
 	VmsPersonName string `json:"vmsPersonName"`
-	VmsPersonMemo string `json:"vmsPersonMemo"`
+	VmsPersonUnit string `json:"vmsPersonUnit"`
 }
 
 type VmsUpdatePersonResponse struct {
@@ -275,7 +275,7 @@ func (m *VmsServerModel) SyncVMSReportData(objectID bson.ObjectId) {
 	for i := 0; i < vmsListKRByPResponse.DataCounts; i++ {
 		saveReportsToBridgeDatabase(objectID.Hex(), vmsListKRByPResponse.KioskReports[i])
 	}
-	vmsSyncRecordsModel.UpdateStatus(objectID.Hex(), "Success", "")
+	//vmsSyncRecordsModel.UpdateStatus(objectID.Hex(), "Success", "")
 }
 
 func (m *VmsServerModel) SyncVMSKioskDeviceData() {
@@ -316,7 +316,7 @@ func (m *VmsServerModel) SyncVMSKioskDeviceData() {
 	}
 }
 
-func (m *VmsServerModel) SyncVMSPersonData() {
+func (m *VmsServerModel) SyncVMSPersonData() (syncDataCounts int){
 	listPersonByPData := VmsListPersonByPBody{
 		m.userToken,
 		"vmsPersonSerial",
@@ -332,12 +332,12 @@ func (m *VmsServerModel) SyncVMSPersonData() {
 	res, err := client.Do(req)
 	if err != nil {
 		logv.Error(err.Error())
-		return
+		return 0
 	}
 	content, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		logv.Error(err.Error())
-		return
+		return 0
 	}
 	respBody := string(content)
 
@@ -356,6 +356,7 @@ func (m *VmsServerModel) SyncVMSPersonData() {
 	for i := 0; i < vmsListPersonByPResponse.DataCounts; i++ {
 		savePersonToBridgeDatabase(vmsListPersonByPResponse.Vms2Person[i])
 	}
+	return vmsListPersonByPResponse.DataCounts
 }
 
 func saveReportsToBridgeDatabase(recordsUUID string, KRData KioskReport) () {
@@ -541,13 +542,13 @@ func (m *VmsServerModel) GetAllKioskDevices() (results []KioskDeviceInfoResponse
 func UpdateVMSPersonData(
 	personUUID string,
 	vmsPersonName string,
-	vmsPersonMemo string,
+	vmsPersonUnit string,
 ) (errCode int){
 	updatePersonData := VmsUpdatePersonBody{
 		MainUserToken,
 		personUUID,
 		vmsPersonName,
-		vmsPersonMemo,
+		vmsPersonUnit,
 	}
 	updatePersonDataJson, _ := json.Marshal(updatePersonData)
 
@@ -584,7 +585,7 @@ func UpdateVMSPersonData(
 		}
 		return 0
 	}
-	logv.Info(" === Update Person Success ===, UUID:> ", personUUID)
+	logv.Info(" === Update Person Success ===, UUID:> ", personUUID + ", :> " + vmsPersonName)
 	return 0
 }
 
@@ -633,7 +634,7 @@ func CreateVMSPersonData(
 		logv.Error(errors.New(vmsCreatePersonResponse.Message))
 		return
 	}
-	logv.Info(" === Create Person Success ===")
+	logv.Info(" === Create Person Success === :> " + vmsPersonName + ", :> " + vmsPersonUnit)
 }
 
 func DeleteVMSPersonData(

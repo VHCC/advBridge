@@ -88,11 +88,25 @@ func (m *HrSyncRecordsModel) UpdateStatus(recordsUUID string, status string, rea
 	return err
 }
 
+func (m *HrSyncRecordsModel) UpdateVMSSync(recordsUUID string, syncDataCounts int) (err error) {
+	collection := dbConnect.UseTable(DB_Name, DB_Table_ADV_HR_SYNC_RECORDS)
+	defer collection.Database.Session.Close()
+
+	err = collection.UpdateId(bson.ObjectIdHex(recordsUUID), bson.M{"$set": bson.M{
+		"syncVmsPersonDataCounts":     syncDataCounts,
+	}})
+	if err != nil {
+		logv.Error(err.Error())
+		return errors.New(err.Error())
+	}
+	return err
+}
+
 // HR 同步資訊
-func (m *HrSyncRecordsModel) ListDataByP(data apiForms.ListByPVmsSyncRecordsDataValidate) (resultsByPage []VmsSyncRecords,
-	resultsTotal []VmsSyncRecords, err error, errcode int) {
-	collectionKD := dbConnect.UseTable(DB_Name, DB_Table_ADV_HR_SYNC_RECORDS)
-	defer collectionKD.Database.Session.Close()
+func (m *HrSyncRecordsModel) ListDataByP(data apiForms.ListByPHrSyncRecordsDataValidate) (resultsByPage []HrSyncRecords,
+	resultsTotal []HrSyncRecords, err error, errcode int) {
+	collectionHSR := dbConnect.UseTable(DB_Name, DB_Table_ADV_HR_SYNC_RECORDS)
+	defer collectionHSR.Database.Session.Close()
 
 	isDESC := 1
 	if *data.Desc {
@@ -114,7 +128,7 @@ func (m *HrSyncRecordsModel) ListDataByP(data apiForms.ListByPVmsSyncRecordsData
 		},
 	}
 
-	pipe := collectionKD.Pipe(pipeline)
+	pipe := collectionHSR.Pipe(pipeline)
 	err = pipe.All(&resultsTotal)
 	if err != nil {
 		logv.Error("Find Response FindId err:> ", err)
@@ -135,18 +149,18 @@ func (m *HrSyncRecordsModel) ListDataByP(data apiForms.ListByPVmsSyncRecordsData
 }
 
 // HR 同步資訊，詳細資料
-func (m *HrSyncRecordsModel) GetDetailDataByP(data apiForms.ListByPVmsSyncRecordsDetailDataValidate) (resultsByPage []KioskReportResponse,
-	resultsTotal []KioskReportResponse, vmsSyncRecord VmsSyncRecords, err error, errcode int) {
+func (m *HrSyncRecordsModel) GetDetailDataByP(data apiForms.ListByPHrSyncRecordsDetailDataValidate) (resultsByPage []SyncVms2PersonResponse,
+	resultsTotal []SyncVms2PersonResponse, hrSyncRecord HrSyncRecords, err error, errcode int) {
 
 	collectionSR := dbConnect.UseTable(DB_Name, DB_Table_ADV_HR_SYNC_RECORDS)
 	defer collectionSR.Database.Session.Close()
 
-	err = collectionSR.FindId(bson.ObjectIdHex(*data.RecordUUID)).One(&vmsSyncRecord)
+	err = collectionSR.FindId(bson.ObjectIdHex(*data.RecordUUID)).One(&hrSyncRecord)
 	if err != nil {
 		logv.Error(err.Error())
-		return resultsTotal, resultsTotal, vmsSyncRecord, err, 0
+		return resultsTotal, resultsTotal, hrSyncRecord, err, 0
 	}
-	collection := dbConnect.UseTable(DB_Name, DB_Table_ADV_SYNC_VMS_KIOSK_REPORTS)
+	collection := dbConnect.UseTable(DB_Name, DB_Table_ADV_HR_SYNC_RECORDS_PERSON)
 	defer collection.Database.Session.Close()
 
 	isDESC := 1
@@ -157,7 +171,7 @@ func (m *HrSyncRecordsModel) GetDetailDataByP(data apiForms.ListByPVmsSyncRecord
 	}
 
 	match_stage := bson.M{
-		"recordsUUID": data.RecordUUID,
+		"hrSyncRecordsUUID": data.RecordUUID,
 	}
 
 	pipeline := []bson.M{
@@ -185,8 +199,8 @@ func (m *HrSyncRecordsModel) GetDetailDataByP(data apiForms.ListByPVmsSyncRecord
 			resultsByPage = append(resultsByPage, resultsTotal[*data.StartIndex+i])
 		}
 	} else {
-		return resultsTotal, resultsTotal, vmsSyncRecord, err, 0
+		return resultsTotal, resultsTotal, hrSyncRecord, err, 0
 	}
 
-	return resultsByPage, resultsTotal, vmsSyncRecord, err, 0
+	return resultsByPage, resultsTotal, hrSyncRecord, err, 0
 }

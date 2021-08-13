@@ -1,7 +1,7 @@
 package apiForms
 
 /**
- * @apiDefine ListByPVmsSyncRecordsDataValidate
+ * @apiDefine ListByPHrSyncRecordsDataValidate
  * @apiParam {String} userToken userToken <a style="color:red">[required]</a>. <br/>
  * @apiParam {String} sortBy  排序欄位, 請參考 vmsSyncRecordsData 欄位 {JsonObject} <a style="color:red">[required]</a>. <br/>
  * @apiParam {Boolean} desc  升冪/降冪 <a style="color:red">[required]</a>. <br/>
@@ -26,7 +26,7 @@ type ListByPHrSyncRecordsDataValidate struct {
 }
 
 /**
- * @apiDefine ListByPVmsSyncRecordsDetailDataValidate
+ * @apiDefine ListByPHrSyncRecordsDetailDataValidate
  * @apiParam {String} userToken userToken <a style="color:red">[required]</a>. <br/>
  * @apiParam {String} recordUUID VMS 同步資訊 UUID <a style="color:red">[required]</a>. <br/>
  * @apiParam {String} sortBy  排序欄位, 請參考 vmsSyncRecordsData 欄位 {JsonObject} <a style="color:red">[required]</a>. <br/>

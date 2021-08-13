@@ -1,7 +1,6 @@
 package models
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 	logv "github.com/sirupsen/logrus"
@@ -36,11 +35,6 @@ func showData(txt string) {
 
 func (m *MsSQLModel) ConnectionTest(
 	host string, account string, pwd string, DBName string) (conn *sql.DB, err error) {
-	//logv.Info(host)
-	//logv.Info(account)
-	//logv.Info(pwd)
-	//logv.Info(DBName)
-	//defer conn.Close()
 
 	connectString := "sqlserver://"+account+":"+pwd +"@"+host+":1433??database=" +DBName+"&dial+timeout=3"
 	//conn, err = sql.Open("mssql",
@@ -59,21 +53,12 @@ func (m *MsSQLModel) ConnectionTest(
 		return conn, err
 	}
 
-	//var bgCtx = context.TODO()
-	//var ctx2SecondTimeout, cancelFunc2SecondTimeout = context.WithTimeout(bgCtx, time.Second*3)
-	//defer cancelFunc2SecondTimeout()
-
 	err = conn.Ping()
 	if err != nil {
 		logv.Error("ConnectionHRTest, Connecting Error:> ", err)
 		conn.Close()
 		return conn, err
 	}
-
-	//if host != "172.20.2.85" {
-	//	logv.Error("ConnectionHRTest, Connecting Error:> ", errors.New("connect Timeout:> " + host))
-	//	return conn, errors.New("connect Timeout:> " + host)
-	//}
 
 	logv.Info("ConnectionHRTest, MSSQL :> ", host+":1433")
 	return conn, err
@@ -99,17 +84,17 @@ func (m *MsSQLModel) ConnectBySystem() (conn *sql.DB, err error) {
 			";password=" + SQLServerPassword +
 			";database=" + SQLServerDBName)
 
-	defer conn.Close()
+	//defer conn.Close()
 	if err != nil {
 		logv.Error("ConnectionHRTest, Connecting Error:> ", err)
 		return conn, err
 	}
 
-	var bgCtx = context.Background()
-	var ctx2SecondTimeout, cancelFunc2SecondTimeout = context.WithTimeout(bgCtx, time.Second*2)
-	defer cancelFunc2SecondTimeout()
+	//var bgCtx = context.Background()
+	//var ctx2SecondTimeout, cancelFunc2SecondTimeout = context.WithTimeout(bgCtx, time.Second*2)
+	//defer cancelFunc2SecondTimeout()
 
-	err = conn.PingContext(ctx2SecondTimeout)
+	err = conn.Ping()
 	if err != nil {
 		logv.Error("ConnectBySystem, Connecting Error:> ", err)
 		return conn, err
@@ -118,20 +103,40 @@ func (m *MsSQLModel) ConnectBySystem() (conn *sql.DB, err error) {
 	return conn, err
 }
 
-func isContainsRFID(personSerialArray []string, s []string, rfid string) (isContained bool, personUUID string, newPersonUUIDArray []string, newPersonSerialArray []string) {
-	//logv.Info("array:> ", len(s))
+func isContainsRFID(personSerialArray []string, personUUIDArray []string, personUnitArray []string, rfid string) (
+	isContained bool, personUUID string,
+	newPersonUUIDArray []string, newPersonSerialArray []string,
+	newPersonUnitArray []string, vmsPersonUnit string) {
 	for index, v := range personSerialArray {
 		if v == rfid {
-			//logv.Info(v, ":> ", s[index])
-			newPersonUUIDArray = append(s[:index], s[index+1:]...)
+			vmsPersonUnit = personUnitArray[index]
+			personUUID = personUUIDArray[index]
+			newPersonUUIDArray = append(personUUIDArray[:index], personUUIDArray[index+1:]...)
 			newPersonSerialArray = append(personSerialArray[:index], personSerialArray[index+1:]...)
-			return true, s[index], newPersonUUIDArray, newPersonSerialArray
+			newPersonUnitArray = append(personUnitArray[:index], personUnitArray[index+1:]...)
+			return true, personUUID, newPersonUUIDArray, newPersonSerialArray, newPersonUnitArray, vmsPersonUnit
 		}
 	}
-	return false, "", s, personSerialArray
+	return false, "", personUUIDArray, personSerialArray, personUnitArray, ""
 }
 
-func (m *MsSQLModel) SyncHRDB(conn *sql.DB) (err error) {
+func (m *MsSQLModel) SyncHRDB(conn *sql.DB, hrSyncObjectID bson.ObjectId) (err error) {
+	defer conn.Close()
+
+	collectionHRSyncRecordsPerson := dbConnect.UseTable(DB_Name, DB_Table_ADV_HR_SYNC_RECORDS_PERSON)
+	defer collectionHRSyncRecordsPerson.Database.Session.Close()
+
+	collectionHRSyncRecords := dbConnect.UseTable(DB_Name, DB_Table_ADV_HR_SYNC_RECORDS)
+	defer collectionHRSyncRecords.Database.Session.Close()
+
+	hr := HrSyncRecords{}
+
+	err = collectionHRSyncRecords.FindId(bson.ObjectIdHex(hrSyncObjectID.Hex())).One(&hr)
+	if err != nil {
+		logv.Error(err.Error())
+		return err
+	}
+
 	collectionVP := dbConnect.UseTable(DB_Name, DB_Table_ADV_SYNC_VMS_PERSON)
 	defer collectionVP.Database.Session.Close()
 
@@ -139,14 +144,17 @@ func (m *MsSQLModel) SyncHRDB(conn *sql.DB) (err error) {
 	err = collectionVP.Find(bson.M{}).All(&vmsPersons)
 	if err != nil {
 		logv.Error(err.Error())
+		return err
 	}
 
 	personUUIDArray := []string{}
 	personSerialArray := []string{}
+	personUnitArray := []string{}
 
 	for _, v := range vmsPersons {
 		personUUIDArray = append(personUUIDArray, v.ID.Hex())
 		personSerialArray = append(personSerialArray, v.VmsPersonSerial)
+		personUnitArray = append(personUnitArray, v.VmsPersonUnit)
 	}
 
 	collectionConfig := dbConnect.UseTable(DB_Name, DB_Table_Global_Config)
@@ -158,19 +166,19 @@ func (m *MsSQLModel) SyncHRDB(conn *sql.DB) (err error) {
 
 	SQLServerTableName := globalConfig.Bundle["HRServer_ViewTableName"].(string)
 
-	collection := dbConnect.UseTable(DB_Name, DB_Table_ADV_User)
+	collection := dbConnect.UseTable(DB_Name, DB_Table_ADV_HR_User)
 	collection.DropCollection()
 	defer collection.Database.Session.Close()
 
 	stmt, err := conn.Prepare("select * from " + SQLServerTableName)
 	if err != nil {
-		logv.Println("Query Error", err)
+		logv.Println("SyncHRDB, Query Error:> ", err)
 		return err
 	}
 	defer stmt.Close()
 	row, err := stmt.Query()
 	if err != nil {
-		logv.Println("Query Error", err)
+		logv.Println("SyncHRDB, Query Error:> ", err)
 		return err
 	}
 	defer row.Close()
@@ -181,6 +189,12 @@ func (m *MsSQLModel) SyncHRDB(conn *sql.DB) (err error) {
 		var EPC string
 		var MEB_CardNo string
 		if err := row.Scan(&EMNO, &NAME, &EPC, &MEB_CardNo); err == nil {
+			err = collectionHRSyncRecords.FindId(bson.ObjectIdHex(hrSyncObjectID.Hex())).One(&hr)
+			if err != nil {
+				logv.Error(err.Error())
+				return err
+			}
+
 			//logv.Info(EMNO, NAME, EPC, MEB_CardNo)
 			objectIdRoot := bson.NewObjectId()
 
@@ -221,15 +235,78 @@ func (m *MsSQLModel) SyncHRDB(conn *sql.DB) (err error) {
 
 				var personUUID string
 				var isContainsRFIDString bool
+				var matchPersonUnit string
 
-				isContainsRFIDString, personUUID, personUUIDArray, personSerialArray = isContainsRFID(personSerialArray, personUUIDArray, reverseHexString)
+				isContainsRFIDString, personUUID, personUUIDArray, personSerialArray, personUnitArray, matchPersonUnit = isContainsRFID(personSerialArray, personUUIDArray, personUnitArray, reverseHexString)
 				if  isContainsRFIDString {
-					errCode := UpdateVMSPersonData(personUUID, NAME, EPC)
-					if errCode == 22001 {
-						CreateVMSPersonData(personUUID, NAME, EMNO, reverseHexString, EPC)
+					if EPC != matchPersonUnit {
+						//logv.Info(EPC + " : " + matchPersonUnit + ", :> " + NAME)
+						errCode := UpdateVMSPersonData(personUUID, NAME, EPC)
+						if errCode == 22001 {
+							CreateVMSPersonData(personUUID, NAME, EPC, reverseHexString, EMNO)
+							err = collectionHRSyncRecords.UpdateId(bson.ObjectIdHex(hrSyncObjectID.Hex()), bson.M{"$set": bson.M{"createVmsPersonDataCounts": hr.CreateVmsPersonDataCounts + 1}})
+							if err != nil {
+								logv.Error(err.Error())
+								return err
+							}
+							collectionHRSyncRecordsPerson.Insert(bson.M{
+								"_id": bson.ObjectIdHex(personUUID),
+								"vmsPersonName": NAME,
+								"vmsPersonUnit": EPC,
+								"vmsPersonSerial": reverseHexString,
+								"vmsPersonMemo": EMNO,
+								"hrSyncRecordsUUID": hrSyncObjectID.Hex(),
+								"action": "create",
+								"status": "SUCCESS",
+							})
+						} else {
+							err = collectionHRSyncRecords.UpdateId(bson.ObjectIdHex(hrSyncObjectID.Hex()), bson.M{"$set": bson.M{"updateVmsPersonDataCounts": hr.UpdateVmsPersonDataCounts + 1}})
+							if err != nil {
+								logv.Error(err.Error())
+								return err
+							}
+							collectionHRSyncRecordsPerson.Insert(bson.M{
+								"_id": bson.ObjectIdHex(personUUID),
+								"vmsPersonName": NAME,
+								"vmsPersonUnit": EPC,
+								"vmsPersonSerial": reverseHexString,
+								"vmsPersonMemo": EMNO,
+								"hrSyncRecordsUUID": hrSyncObjectID.Hex(),
+								"action": "update",
+								"status": "SUCCESS",
+							})
+						}
+					} else {
+						// KEEP
+						collectionHRSyncRecordsPerson.Insert(bson.M{
+							"_id": bson.ObjectIdHex(personUUID),
+							"vmsPersonName": NAME,
+							"vmsPersonUnit": EPC,
+							"vmsPersonSerial": reverseHexString,
+							"vmsPersonMemo": EMNO,
+							"hrSyncRecordsUUID": hrSyncObjectID.Hex(),
+							"action": "keep",
+							"status": "SUCCESS",
+						})
 					}
+
 				} else {
-					CreateVMSPersonData(personUUID, NAME, EMNO, reverseHexString, EPC)
+					CreateVMSPersonData(personUUID, NAME, EPC, reverseHexString, EMNO)
+					err = collectionHRSyncRecords.UpdateId(bson.ObjectIdHex(hrSyncObjectID.Hex()), bson.M{"$set": bson.M{"createVmsPersonDataCounts": hr.CreateVmsPersonDataCounts + 1}})
+					if err != nil {
+						logv.Error(err.Error())
+						return err
+					}
+					collectionHRSyncRecordsPerson.Insert(bson.M{
+						"_id": bson.NewObjectId(),
+						"vmsPersonName": NAME,
+						"vmsPersonUnit": EPC,
+						"vmsPersonSerial": reverseHexString,
+						"vmsPersonMemo": EMNO,
+						"hrSyncRecordsUUID": hrSyncObjectID.Hex(),
+						"action": "create",
+						"status": "SUCCESS",
+					})
 				}
 			} else {
 				err = collection.Insert(bson.M{
@@ -244,15 +321,77 @@ func (m *MsSQLModel) SyncHRDB(conn *sql.DB) (err error) {
 
 				var personUUID string
 				var isContainsRFIDString bool
+				var matchPersonUnit string
 
-				isContainsRFIDString, personUUID, personUUIDArray, personSerialArray = isContainsRFID(personSerialArray, personUUIDArray, MEB_CardNo)
+				isContainsRFIDString, personUUID, personUUIDArray, personSerialArray, personUnitArray, matchPersonUnit = isContainsRFID(personSerialArray, personUUIDArray, personUnitArray, MEB_CardNo)
 				if isContainsRFIDString {
-					errCode := UpdateVMSPersonData(personUUID, NAME, EPC)
-					if errCode == 22001 {
-						CreateVMSPersonData(personUUID, NAME, EMNO, MEB_CardNo, EPC)
+					if EPC != matchPersonUnit {
+						//logv.Info(EPC + " : " + matchPersonUnit)
+						errCode := UpdateVMSPersonData(personUUID, NAME, EPC)
+						if errCode == 22001 {
+							CreateVMSPersonData(personUUID, NAME, EPC, MEB_CardNo, EMNO)
+							err = collectionHRSyncRecords.UpdateId(bson.ObjectIdHex(hrSyncObjectID.Hex()), bson.M{"$set": bson.M{"createVmsPersonDataCounts": hr.CreateVmsPersonDataCounts + 1}})
+							if err != nil {
+								logv.Error(err.Error())
+								return err
+							}
+							collectionHRSyncRecordsPerson.Insert(bson.M{
+								"_id": bson.NewObjectId(),
+								"vmsPersonName": NAME,
+								"vmsPersonUnit": EPC,
+								"vmsPersonSerial": MEB_CardNo,
+								"vmsPersonMemo": EMNO,
+								"hrSyncRecordsUUID": hrSyncObjectID.Hex(),
+								"action": "create",
+								"status": "SUCCESS",
+							})
+						} else {
+							err = collectionHRSyncRecords.UpdateId(bson.ObjectIdHex(hrSyncObjectID.Hex()), bson.M{"$set": bson.M{"updateVmsPersonDataCounts": hr.UpdateVmsPersonDataCounts + 1}})
+							if err != nil {
+								logv.Error(err.Error())
+								return err
+							}
+							collectionHRSyncRecordsPerson.Insert(bson.M{
+								"_id": bson.NewObjectId(),
+								"vmsPersonName": NAME,
+								"vmsPersonUnit": EPC,
+								"vmsPersonSerial": MEB_CardNo,
+								"vmsPersonMemo": EMNO,
+								"hrSyncRecordsUUID": hrSyncObjectID.Hex(),
+								"action": "update",
+								"status": "SUCCESS",
+							})
+						}
+					} else {
+						// KEEP
+						collectionHRSyncRecordsPerson.Insert(bson.M{
+							"_id": bson.ObjectIdHex(personUUID),
+							"vmsPersonName": NAME,
+							"vmsPersonUnit": EPC,
+							"vmsPersonSerial": MEB_CardNo,
+							"vmsPersonMemo": EMNO,
+							"hrSyncRecordsUUID": hrSyncObjectID.Hex(),
+							"action": "keep",
+							"status": "SUCCESS",
+						})
 					}
 				} else {
-					CreateVMSPersonData(personUUID, NAME, EMNO, MEB_CardNo, EPC)
+					CreateVMSPersonData(personUUID, NAME, EPC, MEB_CardNo, EMNO)
+					err = collectionHRSyncRecords.UpdateId(bson.ObjectIdHex(hrSyncObjectID.Hex()), bson.M{"$set": bson.M{"createVmsPersonDataCounts": hr.CreateVmsPersonDataCounts + 1}})
+					if err != nil {
+						logv.Error(err.Error())
+						return err
+					}
+					collectionHRSyncRecordsPerson.Insert(bson.M{
+						"_id": bson.NewObjectId(),
+						"vmsPersonName": NAME,
+						"vmsPersonUnit": EPC,
+						"vmsPersonSerial": MEB_CardNo,
+						"vmsPersonMemo": EMNO,
+						"hrSyncRecordsUUID": hrSyncObjectID.Hex(),
+						"action": "create",
+						"status": "SUCCESS",
+					})
 				}
 			}
 
@@ -260,11 +399,38 @@ func (m *MsSQLModel) SyncHRDB(conn *sql.DB) (err error) {
 				logv.Println("Mongodb Insert Error:> ", err)
 				return err
 			}
+			err = collectionHRSyncRecords.UpdateId(bson.ObjectIdHex(hrSyncObjectID.Hex()), bson.M{"$set": bson.M{"syncHrServerDataCounts": hr.SyncHrServerDataCounts + 1}})
+			if err != nil {
+				logv.Error(err.Error())
+				return err
+			}
 		}
 	}
 	for _, uuid := range personUUIDArray {
 		DeleteVMSPersonData(uuid)
+		err = collectionHRSyncRecords.UpdateId(bson.ObjectIdHex(hrSyncObjectID.Hex()), bson.M{"$set": bson.M{"deleteVmsPersonDataCounts": hr.DeleteVmsPersonDataCounts + 1}})
+		if err != nil {
+			logv.Error(err.Error())
+			return err
+		}
+
+		vmsPerson := VmsPerson{}
+		err = collectionVP.FindId(bson.ObjectIdHex(uuid)).One(&vmsPerson)
+		if err != nil {
+			logv.Error(err.Error())
+		}
+
+		collectionHRSyncRecordsPerson.Insert(bson.M{
+			"_id": bson.NewObjectId(),
+			"vmsPersonName": vmsPerson.VmsPersonName,
+			"vmsPersonUnit": vmsPerson.VmsPersonUnit,
+			"vmsPersonSerial": vmsPerson.VmsPersonSerial,
+			"vmsPersonMemo": vmsPerson.VmsPersonMemo,
+			"hrSyncRecordsUUID": hrSyncObjectID.Hex(),
+			"status": "delete",
+		})
 	}
+
 	logv.Info(" === SyncHRDB Done !!! === ")
 	return err
 }

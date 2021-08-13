@@ -164,3 +164,16 @@ type Vms2PersonResponse struct {
 	IsRealName          bool          `json:"-" bson:"isRealName"`
 	CreateUnixTimestamp int64         `json:"createUnixTimestamp" bson:"createUnixTimestamp"`
 }
+
+type SyncVms2PersonResponse struct {
+	ID                  bson.ObjectId `json:"vmsPersonUUID" bson:"_id,omitempty"`
+	VMSPersonSerial     string        `json:"vmsPersonSerial" bson:"vmsPersonSerial"`
+	VMSPersonName       string        `json:"vmsPersonName" bson:"vmsPersonName"`
+	VMSPersonUnit       string        `json:"vmsPersonUnit" bson:"vmsPersonUnit"`
+	VMSPersonEmail      string        `json:"vmsPersonEmail" bson:"vmsPersonEmail"`
+	VMSPersonMemo       string        `json:"vmsPersonMemo" bson:"vmsPersonMemo"`
+	Action              string        `json:"action" bson:"action"`
+	Status              string        `json:"status" bson:"status"`
+	IsRealName          bool          `json:"-" bson:"isRealName"`
+	CreateUnixTimestamp int64         `json:"createUnixTimestamp" bson:"createUnixTimestamp"`
+}
