@@ -38,6 +38,9 @@ package apiForms
 						20. "HR-SERVER-SYNC-SUCCESS", </br>
 						21. "VMS-SERVER-SYNC-SUCCESS", </br>
 						22. "VNS-SERVER-SYNC-FAIL", </br>
+						22. "VNS-SERVER-SYNC-FAIL", </br>
+						23. "HR-RECORDS-CHECK", </br>
+						24. "VMS-RECORDS-CHECK", </br>
  * @apiParam {Integer} startTimestamp startTimestamp <a style="color:blue">[optional]</a>. <br/>
  * @apiParam {Integer} endTimestamp endTimestamp <a style="color:blue">[optional]</a>. <br/>
 
