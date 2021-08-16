@@ -87,7 +87,7 @@ func (cc *HrSyncRecordsController) ListHRSyncRecordsByParameter(c *gin.Context) 
 
 
 /**
-@api {POST} /api/v1/vmsSyncRecords/getVmsSyncRecordsDetail Detail of HR Server Sync Record
+@api {POST} /api/v1/hrSyncRecords/getHrSyncRecordsDetail Detail of HR Server Sync Record
 @apiDescription Detail of HR Server Sync Record
 @apiversion 0.0.1
 @apiGroup 007 HR Server Sync Records
