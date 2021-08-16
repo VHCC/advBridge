@@ -76,25 +76,6 @@ func (userC *UserController) LoginUser(c *gin.Context) {
 		return
 	}
 
-	//var mode = strings.ToLower(models.SERVER_MODE)
-	//switch(mode) {
-	//case "edge":
-	//	if root.Role == 9999 {
-	//		err = logModel.WriteLog(models.EVENT_TYPE_USER_LOGIN_FAIL, data.AccountID, "USER_NOT_FOUND", nil)
-	//		c.JSON(200, gin.H{"code": 3, "message": "USER_NOT_FOUND"})
-	//		c.Abort()
-	//		return
-	//	}
-	//	break;
-	//case "cloud":
-	//	if root.AccountID == "Admin" && root.Password == "Aa123456*"{
-	//		err = logModel.WriteLog(models.EVENT_TYPE_USER_LOGIN_FAIL, data.AccountID, "USER_NOT_FOUND", nil)
-	//		c.JSON(200, gin.H{"code": 3, "message": "USER_NOT_FOUND"})
-	//		c.Abort()
-	//		return
-	//	}
-	//	break;
-	//}
 	if root.AccountID == "Admin" && root.Password == "Aa123456*"{
 		err = logModel.WriteLog(models.EVENT_TYPE_USER_LOGIN_FAIL, data.AccountID, "USER_NOT_FOUND", nil)
 		c.JSON(200, gin.H{"code": 3, "message": "USER_NOT_FOUND"})
@@ -120,27 +101,9 @@ func (userC *UserController) LoginUser(c *gin.Context) {
 		return
 	}
 
-	//com, err := vms2ComModel.FindComUUID(user.ComUUID)
-	//
-	//if err != nil {
-	//	logv.Error("FindComUUID err:> ", "VMS_COMPANY_NOT_FOUND")
-	//	err = logModel.WriteLog(models.EVENT_TYPE_USER_LOGIN_FAIL, user.AccountID, "VMS_COMPANY_NOT_FOUND", nil)
-	//	c.JSON(200, gin.H{"code": 15001, "message": "VMS_COMPANY_NOT_FOUND"})
-	//	c.Abort()
-	//	return
-	//}
-
-	//if com.Status == 0 {
-	//	logv.Error("FindComUUID err:> ", "COMPANY_STATUS_INACTIVATE")
-	//	err = logModel.WriteLog(models.EVENT_TYPE_USER_LOGIN_FAIL, user.AccountID, "COMPANY_STATUS_INACTIVATE", nil)
-	//	c.JSON(200, gin.H{"code": 7, "message": "COMPANY_STATUS_INACTIVATE"})
-	//	c.Abort()
-	//	return
-	//}
-
 	user, err = userModel.UpdateUserLogin(user.UserUUID)
 
-	err = logModel.WriteLog(models.EVENT_TYPE_USER_LOGIN, user.AccountID, "SUCCESS", nil)
+	logModel.WriteLog(models.EVENT_TYPE_USER_LOGIN, user.AccountID, "SUCCESS", nil)
 	c.JSON(200, gin.H{"code": 0, "message": "SUCCESS", "user": user})
 }
 

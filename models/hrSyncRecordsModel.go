@@ -4,7 +4,9 @@ import (
 	"advBridge/apiForms"
 	"errors"
 	logv "github.com/sirupsen/logrus"
+	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"strconv"
 	"time"
 )
 
@@ -203,4 +205,31 @@ func (m *HrSyncRecordsModel) GetDetailDataByP(data apiForms.ListByPHrSyncRecords
 	}
 
 	return resultsByPage, resultsTotal, hrSyncRecord, err, 0
+}
+
+func (m *HrSyncRecordsModel) CheckHrRecordsRetention() (info *mgo.ChangeInfo, err error) {
+	collection := dbConnect.UseTable(DB_Name, DB_Table_ADV_HR_SYNC_RECORDS)
+	defer collection.Database.Session.Close()
+
+	//collectionConfig := dbConnect.UseTable(DB_Name, DB_Table_Global_Config)
+	//defer collectionConfig.Database.Session.Close()
+	//
+	//var globalConfig GlobalConfig
+	//err = collectionConfig.Find(bson.M{}).One(&globalConfig)
+	//log_retention := globalConfig.Bundle["log_retention"]
+	log_retention := "30"
+
+	log_retention_target, _ := strconv.ParseInt(log_retention, 10, 64)
+
+	//logv.Info(log_retention_target)
+	//logv.Info("log_retention:> ", log_retention)
+	//logv.Info(snapshot_retention)
+
+	timestamp := time.Now().Unix()
+
+	info, err = collection.RemoveAll(bson.M{"createUnixTimestamp": bson.M{"$lte": timestamp - 24*60*60* int64(log_retention_target)}})
+	if err != nil {
+		logv.Error("Update CheckHrRecordsRetention warn:> ", err)
+	}
+	return info, err
 }

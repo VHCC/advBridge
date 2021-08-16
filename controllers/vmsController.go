@@ -24,9 +24,11 @@ func (cc *VmsController) SyncVMSKioskReportsData() (err error){
 		switch errCode {
 		case 101:
 			vmsSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Vms Server 連線失敗")
+			logModel.WriteLog(models.EVENT_TYPE_VMS_KIOSK_REPORTS_SYNC_FAIL, "SYSTEM", err.Error(), nil)
 			return err
 		case 104:
 			vmsSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Vms Server 登入失敗")
+			logModel.WriteLog(models.EVENT_TYPE_VMS_KIOSK_REPORTS_SYNC_FAIL, "SYSTEM", err.Error(), nil)
 			return err
 		}
 		return err
@@ -36,12 +38,17 @@ func (cc *VmsController) SyncVMSKioskReportsData() (err error){
 	if err != nil {
 		logv.Error(err.Error())
 		vmsSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Mqtt 連線失敗")
+		logModel.WriteLog(models.EVENT_TYPE_RFID_SERVER_CONNECT_FAIL, "SYSTEM", err.Error(), nil)
 		return err
 	}
-
+	logModel.WriteLog(models.EVENT_TYPE_VMS_KIOSK_REPORTS_SYNC_START, "SYSTEM", "SUCCESS", nil)
 	vmsServerModel.SyncVMSReportData(objectID)
 	vmsSyncRecordsModel.UpdateStatus(objectID.Hex(), "Success", "")
+	logModel.WriteLog(models.EVENT_TYPE_VMS_KIOSK_REPORTS_SYNC_DONE, "SYSTEM", "SUCCESS", nil)
+
 	vmsServerModel.SyncVMSKioskDeviceData()
+	logModel.WriteLog(models.EVENT_TYPE_VMS_KIOSK_DEVICE_SYNC_SUCCESS, "SYSTEM", "SUCCESS", nil)
+
 	vmsServerModel.SyncVMSPersonData()
 	return err
 }
@@ -79,9 +86,11 @@ func (cc *VmsController) VmsServerConnectionTest(c *gin.Context) {
 	err := vmsServerModel.ConnectionVMSTest(data.AccountID, data.Password, data.Protocol, data.Host)
 	if err != nil {
 		c.JSON(200, gin.H{"code": 2001, "message": "CONNECT_ERROR, " + err.Error()})
+		logModel.WriteLog(models.EVENT_TYPE_VMS_SERVER_CONNECT_FAIL, data.AccountID, "CONNECT_ERROR, " + err.Error(), nil)
 		c.Abort()
 		return
 	}
+	logModel.WriteLog(models.EVENT_TYPE_VMS_SERVER_CONNECT_SUCCESS, data.AccountID, "SUCCESS" + err.Error(), nil)
 	c.JSON(200, gin.H{"code": 0, "message": "SUCCESS"})
 }
 

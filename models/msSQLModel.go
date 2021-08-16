@@ -427,7 +427,8 @@ func (m *MsSQLModel) SyncHRDB(conn *sql.DB, hrSyncObjectID bson.ObjectId) (err e
 			"vmsPersonSerial": vmsPerson.VmsPersonSerial,
 			"vmsPersonMemo": vmsPerson.VmsPersonMemo,
 			"hrSyncRecordsUUID": hrSyncObjectID.Hex(),
-			"status": "delete",
+			"action": "delete",
+			"status": "SUCCESS",
 		})
 	}
 

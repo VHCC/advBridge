@@ -187,11 +187,13 @@ var vmsServerController = new(VmsController)
 *                 1:INVALID_PARAMETERS (參數缺少或錯誤) </br>
 *				  1001:USER_TOKEN_INVALID (userToken invalid) </br>
 *                 2001:CONNECT_ERROR </br>
+*                 11099:OPERATION_FAIL  </br>
 * @apiSuccess     {String}  message  錯誤訊息
 *
 * @apiUse HRServerResponse_Success
 * @apiUse UserResponse_Invalid_parameter
 * @apiUse HRServerResponse_Connect_Err
+* @apiUse Response_Operation_Fail
 * @apiUse UserResponse_user_token_invalid
 */
 func (cc *VmsSyncRecordsController) RequestSyncWithVMS(c *gin.Context) {
@@ -219,9 +221,20 @@ func (cc *VmsSyncRecordsController) RequestSyncWithVMS(c *gin.Context) {
 
 	err := vmsServerController.SyncVMSKioskReportsData()
 	if err != nil {
-		c.JSON(200, gin.H{"code": 2001, "message": "CONNECT_ERROR, " + err.Error()})
+		c.JSON(200, gin.H{"code": 2001, "message": "OPERATION_FAIL, " + err.Error()})
+		logModel.WriteLog(models.EVENT_TYPE_VMS_SERVER_SYNC_FAIL, queryUser.AccountID, "OPERATION_FAIL, " + err.Error(), nil)
 		c.Abort()
 		return
 	}
+	logModel.WriteLog(models.EVENT_TYPE_VMS_SERVER_SYNC_SUCCESS, queryUser.AccountID, "SUCCESS", nil)
 	c.JSON(200, gin.H{"code": 0, "message": "SUCCESS"})
+}
+
+func (cc *VmsSyncRecordsController) CheckVMSRecordsRetentions() {
+	info, err := vmsSyncRecordsModel.CheckVMSRecordsRetention()
+	if err != nil {
+		logv.Error("CheckVMSRecordsRetentions warn:> ", err)
+	}
+	detailJson := map[string]interface{}{"removed": info.Removed}
+	logModel.WriteLog(models.EVENT_TYPE_VMS_RECORDS_RETENTION_CHECK, "SYSTEM", "SUCCESS", detailJson)
 }

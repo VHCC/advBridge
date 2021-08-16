@@ -123,15 +123,30 @@ func (globalConfigC *GlobalConfigController) UpdateGlobalConfig(c *gin.Context) 
 		return
 	}
 
+	data.UserToken = nil
 	res2B, _ := json.Marshal(data)
 	var queryRequest map[string]interface{}
 	_ = bson.UnmarshalJSON([]byte(string(res2B)), &queryRequest)
-	if data.Bundle["log_retention"] != nil || data.Bundle["checkin_retention"] != nil || data.Bundle["snapshot_retention"] != nil{
-		err = logModel.WriteLog(models.EVENT_TYPE_RETENTION_UPDATE, queryUser.AccountID, "SUCCESS", queryRequest)
+	if data.Bundle["VMSServer_Protocol"] != nil ||
+		data.Bundle["VMSServer_Host"] != nil ||
+		data.Bundle["VMSServer_Account"] != nil ||
+		data.Bundle["VMSServer_Password"] != nil{
+		err = logModel.WriteLog(models.EVENT_TYPE_VMS_SERVER_UPDATE, queryUser.AccountID, "SUCCESS", queryRequest["bundle"].(map[string]interface{}))
 	}
 
-	if data.Bundle["smtp"] != nil || data.Bundle["port"] != nil || data.Bundle["enablessltls"] != nil{
-		err = logModel.WriteLog(models.EVENT_TYPE_SMTP_UPDATE, queryUser.AccountID, "SUCCESS", queryRequest)
+	if data.Bundle["HRServer_SQLServerHost"] != nil ||
+		data.Bundle["HRServer_Account"] != nil ||
+		data.Bundle["HRServer_Password"] != nil ||
+		data.Bundle["HRServer_DatabaseName"] != nil ||
+		data.Bundle["HRServer_ViewTableName"] != nil{
+		err = logModel.WriteLog(models.EVENT_TYPE_HR_SERVER_UPDATE, queryUser.AccountID, "SUCCESS", queryRequest["bundle"].(map[string]interface{}))
+	}
+
+	if data.Bundle["RFIDServer_MqttConnectionString"] != nil ||
+		data.Bundle["RFIDServer_MqttTopic"] != nil ||
+		data.Bundle["RFIDServer_Username"] != nil ||
+		data.Bundle["RFIDServer_Password"] != nil{
+		err = logModel.WriteLog(models.EVENT_TYPE_RFID_SERVER_UPDATE, queryUser.AccountID, "SUCCESS", queryRequest["bundle"].(map[string]interface{}))
 	}
 
 	c.JSON(200, gin.H{"code": 0, "message": "SUCCESS", "serverConfig": serverConfig})

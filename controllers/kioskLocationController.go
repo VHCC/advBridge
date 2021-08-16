@@ -16,9 +16,6 @@ type KioskLocationController struct {
 
 var kioskLocationModel = new(models.VmsServerModel)
 
-func (cc *KioskLocationController) SyncVMSKioskReportsData() {
-}
-
 
 /**
 @api {POST} /api/v1/kioskLocation/create Create Kiosk Location
@@ -69,6 +66,7 @@ func (cc *KioskLocationController) CreateLocation(c *gin.Context) {
 		c.Abort()
 		return
 	}
+	logModel.WriteLog(models.EVENT_TYPE_KIOSK_LOCATION_CREATE, queryUser.AccountID, "SUCCESS", nil)
 	c.JSON(200, gin.H{"code": 0, "message": "SUCCESS"})
 }
 
@@ -121,6 +119,7 @@ func (cc *KioskLocationController) RemoveLocation(c *gin.Context) {
 		c.Abort()
 		return
 	}
+	logModel.WriteLog(models.EVENT_TYPE_KIOSK_LOCATION_DELETE, queryUser.AccountID, "SUCCESS", nil)
 	c.JSON(200, gin.H{"code": 0, "message": "SUCCESS"})
 }
 
@@ -234,5 +233,6 @@ func (cc *KioskLocationController) EditLocation(c *gin.Context) {
 		c.Abort()
 		return
 	}
+	logModel.WriteLog(models.EVENT_TYPE_KIOSK_LOCATION_UPDATE, queryUser.AccountID, "SUCCESS", nil)
 	c.JSON(200, gin.H{"code": 0, "message": "SUCCESS"})
 }

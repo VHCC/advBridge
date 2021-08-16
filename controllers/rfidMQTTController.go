@@ -79,9 +79,13 @@ func (topic *TopicController) ConnectTest(c *gin.Context) {
 	if err != nil {
 		if err != nil {
 			c.JSON(200, gin.H{"code": 2001, "message": "CONNECT_ERROR, " + err.Error()})
+			logModel.WriteLog(models.EVENT_TYPE_RFID_SERVER_CONNECT_FAIL, data.RFIDServerUsername, err.Error(), nil)
 			c.Abort()
 			return
 		}
 	}
+
+	logModel.WriteLog(models.EVENT_TYPE_RFID_SERVER_CONNECT_SUCCESS, data.RFIDServerUsername, "SUCCESS", nil)
+
 	c.JSON(200, gin.H{"code": 0, "message": "SUCCESS"})
 }

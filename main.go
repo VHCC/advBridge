@@ -39,7 +39,8 @@ func main() {
 	// ================ v1 ===================
 	ticker10sv1 := time.NewTicker(1 * 10 * time.Second)
 	ticker1m1 := time.NewTicker(1 * 60 * time.Second)
-	ticker5mv1 := time.NewTicker(5 * 1 * time.Second)
+	ticker5mv1 := time.NewTicker(5 * 60 * time.Second)
+	ticker60mv1 := time.NewTicker(60 * time.Minute)
 	v1 := router.Group("/api/v1")
 	{
 		userController := new(controllers.UserController)
@@ -60,7 +61,6 @@ func main() {
 		v1.POST("/hrServer/connectTest", msSQLController.MSSQLConnectionTest)
 
 		vmsServerController := new(controllers.VmsController)
-		vmsServerController.SyncVMSKioskReportsData()
 		v1.POST("/vmsServer/connectTest", vmsServerController.VmsServerConnectionTest)
 		v1.POST("/vmsServer/fetchVMSKioskReports", vmsServerController.FetchVmsKioskReports)
 		v1.POST("/vmsServer/fetchVMSKioskDevices", vmsServerController.FetchVmsKioskDevices)
@@ -90,6 +90,9 @@ func main() {
 		v1.POST("/hrSyncRecords/listHrSyncRecords", hrSyncRecordsController.ListHRSyncRecordsByParameter)
 		v1.POST("/hrSyncRecords/getHrSyncRecordsDetail", hrSyncRecordsController.ListHRSyncRecordsDetailByParameter)
 		v1.POST("/hrSyncRecords/requestSyncWithHR", msSQLController.RequestSyncHRDatabase)
+
+		bridgeLogController := new(controllers.BridgeLogController)
+		v1.POST("/bridgeLog/listByParameter", bridgeLogController.ListVmsLogByPData)
 
 		//vmsFormController := new(controllers.VmsFormController)
 		// ========== VMS ============
@@ -160,17 +163,25 @@ func main() {
 					//logv.Info("Tick 10 s at:> ", t10s)
 					_ = t10s
 					targetTimeStamp := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(),
-						04, 59, 59, 0, time.UTC)
+						23, 59, 59, 0, time.UTC)
 					nowTimeStamp := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(),
 						time.Now().Hour(), time.Now().Minute(), time.Now().Second(), 0, time.UTC)
 					//logv.Info("now:> ", nowTimeStamp.Unix(), " || targetTime:> ", targetTimeStamp.Unix())
 					//logv.Info()
 					//
 					if nowTimeStamp.Unix() > targetTimeStamp.Unix() {
+						logv.Info(" ============= CheckDataRetentions ===========")
+						// TODO Check retentionData
+						//vms2KioskReportsController.CheckKioskReportsRetentions()
+						bridgeLogController.CheckBridgeLogRetentions()
 					}
 				case t1m := <-ticker1m1.C:
 					_ = t1m
 					vmsServerController.SyncVMSKioskReportsData()
+				case t60m := <-ticker60mv1.C:
+					_ = t60m
+					vmsSyncRecordsController.CheckVMSRecordsRetentions()
+					hrSyncRecordsController.CheckHrRecordsRetentions()
 				}
 			}
 		}()

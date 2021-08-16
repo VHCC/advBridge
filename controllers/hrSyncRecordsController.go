@@ -103,6 +103,14 @@ func (cc *HrSyncRecordsController) ListHRSyncRecordsByParameter(c *gin.Context) 
 * @apiSuccess     {String}  message  錯誤訊息
 * @apiSuccess     {JsonObject} hrSyncRecord HR SERVER 同步紀錄
 * @apiSuccess     {JsonArray} syncVmsPersons 人員同步清單
+* @apiSuccess     {String} syncVmsPersons-action 人員同步詳細資料-同步動作 <br>
+							1. delete = 刪除 <br>
+							2. keep = 保留 <br>
+							3. create = 新增 <br>
+							4. update = 更新
+* @apiSuccess     {String} syncVmsPersons-status 人員同步詳細資料-同步結果 <br>
+							1. SUCCESS <br>
+							2. FAIL
 * @apiSuccess     {Integer} dataCounts 人員同步清單總筆數
 *
 * @apiUse HRSyncRecordsResponse_Detail_Success
@@ -154,6 +162,15 @@ func (cc *HrSyncRecordsController) ListHRSyncRecordsDetailByParameter(c *gin.Con
 		"hrSyncRecord": hrSyncRecord,
 		"syncVmsPersons": syncVmsPersons,
 		"dataCounts": len(syncVmsPersonsTotal)})
+}
+
+func (cc *HrSyncRecordsController) CheckHrRecordsRetentions() {
+	info, err := hrSyncRecordsModel.CheckHrRecordsRetention()
+	if err != nil {
+		logv.Error("CheckHrRecordsRetentions warn:> ", err)
+	}
+	detailJson := map[string]interface{}{"removed": info.Removed}
+	logModel.WriteLog(models.EVENT_TYPE_HR_RECORDS_RETENTION_CHECK, "SYSTEM", "SUCCESS", detailJson)
 }
 
 

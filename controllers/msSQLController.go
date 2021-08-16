@@ -25,9 +25,11 @@ func (cc *MsSQLController) SyncHRDatabase() (){
 		switch errCode {
 		case 101:
 			hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Vms Server 連線失敗")
+			logModel.WriteLog(models.EVENT_TYPE_VMS_SERVER_CONNECT_FAIL, "SYSTEM", "CONNECT_ERROR, " + err.Error(), nil)
 			return
 		case 104:
 			hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Vms Server 登入失敗")
+			logModel.WriteLog(models.EVENT_TYPE_VMS_SERVER_CONNECT_FAIL, "SYSTEM", "CONNECT_ERROR, " + err.Error(), nil)
 			return
 		}
 		return
@@ -35,10 +37,16 @@ func (cc *MsSQLController) SyncHRDatabase() (){
 
 	conn, err := msSQLModel.ConnectBySystem()
 	if err != nil {
-		hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "HR Server 失敗, " + err.Error())
+		hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "HR Server 連線失敗, " + err.Error())
+		logModel.WriteLog(models.EVENT_TYPE_HR_SERVER_CONNECT_FAIL, "SYSTEM", "CONNECT_ERROR, " + err.Error(), nil)
 		return
 	}
-	msSQLModel.SyncHRDB(conn, objectID)
+	err = msSQLModel.SyncHRDB(conn, objectID)
+	if err != nil {
+		hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "HR Server 撈取資料失敗, " + err.Error())
+		logModel.WriteLog(models.EVENT_TYPE_HR_SERVER_SYNC_FAIL, "SYSTEM", "OPERATION_FAIL, " + err.Error(), nil)
+		return
+	}
 	hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Success", "")
 }
 
@@ -46,7 +54,7 @@ func (cc *MsSQLController) SyncHRDatabase() (){
 
 
 /**
-@api {POST} /hrSyncRecords/requestSyncWithHR Request Sync With HR Server
+@api {POST} /api/v1/hrSyncRecords/requestSyncWithHR Request Sync With HR Server
 @apiDescription Request Sync With HR
 @apiversion 0.0.1
 @apiGroup 007 HR Server Sync Records
@@ -98,6 +106,7 @@ func (cc *MsSQLController) RequestSyncHRDatabase(c *gin.Context){
 		case 104:
 			hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Vms Server 登入失敗")
 		}
+		logModel.WriteLog(models.EVENT_TYPE_VMS_SERVER_CONNECT_FAIL, queryUser.AccountID, "CONNECT_ERROR, " + err.Error(), nil)
 		c.JSON(200, gin.H{"code": 2001, "message": "CONNECT_ERROR, " + err.Error()})
 		c.Abort()
 		return
@@ -105,8 +114,9 @@ func (cc *MsSQLController) RequestSyncHRDatabase(c *gin.Context){
 
 	conn, err := msSQLModel.ConnectBySystem()
 	if err != nil {
-		hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "HR Server 失敗, " + err.Error())
+		hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "HR Server 連線失敗, " + err.Error())
 		c.JSON(200, gin.H{"code": 2001, "message": "CONNECT_ERROR, " + err.Error()})
+		logModel.WriteLog(models.EVENT_TYPE_HR_SERVER_CONNECT_FAIL, queryUser.AccountID, "CONNECT_ERROR, " + err.Error(), nil)
 		c.Abort()
 		return
 	}
@@ -116,12 +126,14 @@ func (cc *MsSQLController) RequestSyncHRDatabase(c *gin.Context){
 
 	err = msSQLModel.SyncHRDB(conn, objectID)
 	if err != nil {
-		hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Sync 失敗, " + err.Error())
+		hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "HR Server 撈取資料失敗, " + err.Error())
 		c.JSON(200, gin.H{"code": 11099, "message": "OPERATION_FAIL, " + err.Error()})
+		logModel.WriteLog(models.EVENT_TYPE_HR_SERVER_SYNC_FAIL, queryUser.AccountID, "OPERATION_FAIL, " + err.Error(), nil)
 		c.Abort()
 		return
 	}
 	hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Success", "")
+	logModel.WriteLog(models.EVENT_TYPE_HR_SERVER_SYNC_SUCCESS, queryUser.AccountID, "SUCCESS", nil)
 	c.JSON(200, gin.H{"code": 0, "message": "SUCCESS"})
 }
 
@@ -157,10 +169,11 @@ func (cc *MsSQLController) MSSQLConnectionTest(c *gin.Context) {
 
 	_, err := msSQLModel.ConnectionTest(data.Host, data.AccountID, data.Password, data.DBName)
 	if err != nil {
-		logv.Info("QQQQQ")
 		c.JSON(200, gin.H{"code": 2001, "message": "CONNECT_ERROR, " + err.Error()})
+		logModel.WriteLog(models.EVENT_TYPE_HR_SERVER_CONNECT_FAIL, data.AccountID, "CONNECT_ERROR, " + err.Error(), nil)
 		c.Abort()
 		return
 	}
+	logModel.WriteLog(models.EVENT_TYPE_HR_SERVER_CONNECT_SUCCESS, data.AccountID, "SUCCESS", nil)
 	c.JSON(200, gin.H{"code": 0, "message": "SUCCESS"})
 }

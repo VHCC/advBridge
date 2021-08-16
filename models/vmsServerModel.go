@@ -258,6 +258,8 @@ func (m *VmsServerModel) SyncVMSReportData(objectID bson.ObjectId) {
 	content, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		logv.Error(err.Error())
+		WriteLog(EVENT_TYPE_VMS_KIOSK_REPORTS_SYNC_FAIL, "SYSTEM", err.Error(), nil)
+
 		return
 	}
 	respBody := string(content)
@@ -268,6 +270,7 @@ func (m *VmsServerModel) SyncVMSReportData(objectID bson.ObjectId) {
 	defer res.Body.Close()
 	if vmsListKRByPResponse.Code != 0 {
 		logv.Error(errors.New(vmsListKRByPResponse.Message))
+		WriteLog(EVENT_TYPE_VMS_KIOSK_REPORTS_SYNC_FAIL, "SYSTEM", vmsListKRByPResponse.Message, nil)
 	}
 
 	logv.Info(" === ListKRByP Success, Response === Counts:> ", vmsListKRByPResponse.DataCounts)
@@ -309,6 +312,7 @@ func (m *VmsServerModel) SyncVMSKioskDeviceData() {
 	defer res.Body.Close()
 	if vmsListKioskByPResponse.Code != 0 {
 		logv.Error(errors.New(vmsListKioskByPResponse.Message))
+		WriteLog(EVENT_TYPE_VMS_KIOSK_DEVICE_SYNC_FAIL, "SYSTEM", vmsListKioskByPResponse.Message, nil)
 	}
 	logv.Info(" === ListKioskDeviceByP Success, Response === Counts:> ", vmsListKioskByPResponse.DataCounts)
 	for i := 0; i < vmsListKioskByPResponse.DataCounts; i++ {
@@ -379,12 +383,14 @@ func saveReportsToBridgeDatabase(recordsUUID string, KRData KioskReport) () {
 	err = collectionSyncRecords.FindId(bson.ObjectIdHex(recordsUUID)).One(&sr)
 	if err != nil {
 		logv.Error(err.Error())
+		WriteLog(EVENT_TYPE_VMS_KIOSK_REPORTS_SYNC_FAIL, "SYSTEM", err.Error() + " :> " + recordsUUID, nil)
 		return
 	}
 
 	err = collectionSyncRecords.UpdateId(bson.ObjectIdHex(recordsUUID), bson.M{"$set": bson.M{"syncVmsDataCounts": sr.SyncVmsDataCounts + 1}})
 	if err != nil {
 		logv.Error(err.Error())
+		WriteLog(EVENT_TYPE_VMS_KIOSK_REPORTS_SYNC_FAIL, "SYSTEM", err.Error() + " :> " + recordsUUID, nil)
 		return
 	}
 
@@ -397,6 +403,7 @@ func saveReportsToBridgeDatabase(recordsUUID string, KRData KioskReport) () {
 	err = collectionSyncRecords.UpdateId(bson.ObjectIdHex(recordsUUID), bson.M{"$set": bson.M{"RFIDDataSendCounts": sr.RFIDDataSendCounts + 1}})
 	if err != nil {
 		logv.Error(err.Error())
+		WriteLog(EVENT_TYPE_VMS_KIOSK_REPORTS_SYNC_FAIL, "SYSTEM", err.Error() + " :> " + recordsUUID, nil)
 		return
 	}
 
@@ -444,6 +451,7 @@ func saveKioskDeviceToBridgeDatabase(KioskData KioskDeviceInfo) () {
 		err = collection.RemoveId(kiosk.ID.Hex())
 		if err == nil {
 			logv.Error(err.Error())
+			WriteLog(EVENT_TYPE_VMS_KIOSK_DEVICE_SYNC_FAIL, "SYSTEM", err.Error() + " :> " + kiosk.ID.Hex(), nil)
 		}
 	}
 	//logv.Info("ADD KioskDevice UUID:> ", KioskData.ID.Hex())

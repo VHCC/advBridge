@@ -1,15 +1,16 @@
 package models
 
 import (
-	logv "github.com/sirupsen/logrus"
-	"gopkg.in/mgo.v2/bson"
 	"advBridge/apiForms"
+	logv "github.com/sirupsen/logrus"
+	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 	"strconv"
 	"time"
 )
 
-type VmsLog struct {
-	ID                  bson.ObjectId          `json:"comUUID" bson:"_id"`
+type BridgeLog struct {
+	ID                  bson.ObjectId          `json:"_id" bson:"_id"`
 	AccountID           string                 `json:"accountID" bson:"accountID"`
 	LogType             string                 `json:"logType" bson:"logType"`
 	Message             string                 `json:"message" bson:"message"`
@@ -23,8 +24,12 @@ type VmsLog struct {
 type VmsLogModel struct{}
 
 func (m *VmsLogModel) WriteLog(eventType int, account string, message string, detail map[string]interface{}) (err error) {
+	return WriteLog(eventType, account, message, detail )
+}
 
-	collection := dbConnect.UseTable(DB_Name, DB_VMS_Log)
+
+func WriteLog(eventType int, account string, message string, detail map[string]interface{}) (err error) {
+	collection := dbConnect.UseTable(DB_Name, DB_ADV_BRIDGE_Log)
 	defer collection.Database.Session.Close()
 
 	objectId := bson.NewObjectId()
@@ -84,6 +89,37 @@ func (m *VmsLogModel) WriteLog(eventType int, account string, message string, de
 		eventString = EVENT_TYPE_LOG_EXPORT_TYPE
 	}
 
+	// bridge
+	switch eventType {
+	case EVENT_TYPE_VMS_SERVER_UPDATE: eventString = EVENT_TYPE_VMS_SERVER_UPDATE_TYPE
+	case EVENT_TYPE_HR_SERVER_UPDATE: eventString = EVENT_TYPE_HR_SERVER_UPDATE_TYPE
+	case EVENT_TYPE_RFID_SERVER_UPDATE: eventString = EVENT_TYPE_RFID_SERVER_UPDATE_TYPE
+	case EVENT_TYPE_KIOSK_LOCATION_CREATE: eventString = EVENT_TYPE_KIOSK_LOCATION_CREATE_TYPE
+	case EVENT_TYPE_KIOSK_LOCATION_UPDATE: eventString = EVENT_TYPE_KIOSK_LOCATION_UPDATE_TYPE
+	case EVENT_TYPE_KIOSK_LOCATION_DELETE: eventString = EVENT_TYPE_KIOSK_LOCATION_DELETE_TYPE
+	case EVENT_TYPE_BRIDGE_LOG_RETENTION_CHECK: eventString = EVENT_TYPE_BRIDGE_LOG_RETENTION_CHECK_TYPE
+	case EVENT_TYPE_RFID_SERVER_CONNECT_SUCCESS: eventString = EVENT_TYPE_RFID_SERVER_CONNECT_SUCCESS_TYPE
+	case EVENT_TYPE_VMS_SERVER_CONNECT_SUCCESS: eventString = EVENT_TYPE_VMS_SERVER_CONNECT_SUCCESS_TYPE
+	case EVENT_TYPE_HR_SERVER_CONNECT_SUCCESS: eventString = EVENT_TYPE_HR_SERVER_CONNECT_SUCCESS_TYPE
+	case EVENT_TYPE_RFID_SERVER_CONNECT_FAIL: eventString = EVENT_TYPE_RFID_SERVER_CONNECT_FAIL_TYPE
+	case EVENT_TYPE_VMS_SERVER_CONNECT_FAIL: eventString = EVENT_TYPE_VMS_SERVER_CONNECT_FAIL_TYPE
+	case EVENT_TYPE_HR_SERVER_CONNECT_FAIL: eventString = EVENT_TYPE_HR_SERVER_CONNECT_FAIL_TYPE
+	case EVENT_TYPE_VMS_KIOSK_REPORTS_SYNC_START: eventString = EVENT_TYPE_VMS_KIOSK_REPORTS_SYNC_START_TYPE
+	case EVENT_TYPE_VMS_KIOSK_REPORTS_SYNC_DONE: eventString = EVENT_TYPE_VMS_KIOSK_REPORTS_SYNC_DONE_TYPE
+	case EVENT_TYPE_VMS_KIOSK_REPORTS_SYNC_FAIL: eventString = EVENT_TYPE_VMS_KIOSK_REPORTS_SYNC_FAIL_TYPE
+	case EVENT_TYPE_VMS_KIOSK_DEVICE_SYNC_SUCCESS: eventString = EVENT_TYPE_VMS_KIOSK_DEVICE_SYNC_SUCCESS_TYPE
+	case EVENT_TYPE_VMS_KIOSK_DEVICE_SYNC_FAIL: eventString = EVENT_TYPE_VMS_KIOSK_DEVICE_SYNC_FAIL_TYPE
+	case EVENT_TYPE_HR_SERVER_SYNC_FAIL: eventString = EVENT_TYPE_HR_SERVER_SYNC_FAIL_TYPE
+	case EVENT_TYPE_HR_SERVER_SYNC_SUCCESS: eventString = EVENT_TYPE_HR_SERVER_SYNC_SUCCESS_TYPE
+	case EVENT_TYPE_VMS_SERVER_SYNC_SUCCESS: eventString = EVENT_TYPE_VMS_SERVER_SYNC_SUCCESS_TYPE
+	case EVENT_TYPE_VMS_SERVER_SYNC_FAIL: eventString = EVENT_TYPE_VMS_SERVER_SYNC_FAIL_TYPE
+	case EVENT_TYPE_HR_RECORDS_RETENTION_CHECK: eventString = EVENT_TYPE_HR_RECORDS_RETENTION_CHECK_TYPE
+	case EVENT_TYPE_VMS_RECORDS_RETENTION_CHECK: eventString = EVENT_TYPE_VMS_RECORDS_RETENTION_CHECK_TYPE
+
+
+	}
+
+
 	err = collection.Insert(bson.M{
 		"_id":                 objectId,
 		"logType":             eventString,
@@ -99,9 +135,9 @@ func (m *VmsLogModel) WriteLog(eventType int, account string, message string, de
 	return err
 }
 
-func (m *VmsLogModel) ListLogByP(data apiForms.ListByPVms2LogDataValidate) (vmsLog []VmsLog, vmsLogTotal []VmsLog,
+	func (m *VmsLogModel) ListLogByP(data apiForms.ListByPBridgeLogDataValidate) (vmsLog []BridgeLog, vmsLogTotal []BridgeLog,
 	err error, errcode int) {
-	collectionKD := dbConnect.UseTable(DB_Name, DB_VMS_Log)
+	collectionKD := dbConnect.UseTable(DB_Name, DB_ADV_BRIDGE_Log)
 	defer collectionKD.Database.Session.Close()
 
 	isDESC := 1
@@ -145,8 +181,8 @@ func (m *VmsLogModel) ListLogByP(data apiForms.ListByPVms2LogDataValidate) (vmsL
 		match_stage["createUnixTimestamp"] = bson.M{"$gte": *data.StartTimestamp, "$lte": *data.EndTimestamp}
 	}
 
-	logv.Info(data)
-	logv.Info(match_stage)
+	//logv.Info(data)
+	//logv.Info(match_stage)
 	pipeline := []bson.M{
 		{
 			"$match": match_stage,
@@ -165,7 +201,7 @@ func (m *VmsLogModel) ListLogByP(data apiForms.ListByPVms2LogDataValidate) (vmsL
 	}
 
 	if *data.Count != -1 {
-		vmsLog = []VmsLog{}
+		vmsLog = []BridgeLog{}
 		for i := 0; i < *data.Count; i++ {
 			if *data.StartIndex+i >= len(vmsLogTotal) {
 				break
@@ -178,32 +214,59 @@ func (m *VmsLogModel) ListLogByP(data apiForms.ListByPVms2LogDataValidate) (vmsL
 	}
 }
 
-// ============ DEVICE LOG ================
-func (m *VmsLogModel) WriteDeviceLog(eventType string, account string, message string, deviceTime string, deviceUUID string, detail map[string]interface{}) (err error) {
+//// ============ DEVICE LOG ================
+//func (m *VmsLogModel) WriteDeviceLog(eventType string, account string, message string, deviceTime string, deviceUUID string, detail map[string]interface{}) (err error) {
+//
+//	collection := dbConnect.UseTable(DB_Name, DB_VMS_Log)
+//	defer collection.Database.Session.Close()
+//
+//	objectId := bson.NewObjectId()
+//
+//	eventString := eventType
+//	logv.Info(deviceTime)
+//	timestamp, err := strconv.ParseInt(deviceTime, 10, 64)
+//	logv.Info(timestamp)
+//	err = collection.Insert(bson.M{
+//		"_id":                 objectId,
+//		"logType":             eventString,
+//		"accountID":           account,
+//		"message":             message,
+//		"detail":              detail,
+//		"isDevice":            true,
+//		"deviceUUID":          deviceUUID,
+//		"createUnixTimestamp": timestamp,
+//		"fetchTimestamp":      time.Now().Unix(),
+//	})
+//	if err != nil {
+//		logv.Error("Write Log Insert err:> ", err)
+//	}
+//	return err
+//}
 
-	collection := dbConnect.UseTable(DB_Name, DB_VMS_Log)
+func (m *VmsLogModel) CheckVmsLogRetention() (info *mgo.ChangeInfo, err error) {
+	collection := dbConnect.UseTable(DB_Name, DB_ADV_BRIDGE_Log)
 	defer collection.Database.Session.Close()
 
-	objectId := bson.NewObjectId()
+	//collectionConfig := dbConnect.UseTable(DB_Name, DB_Table_Global_Config)
+	//defer collectionConfig.Database.Session.Close()
+	//
+	//var globalConfig GlobalConfig
+	//err = collectionConfig.Find(bson.M{}).One(&globalConfig)
+	//log_retention := globalConfig.Bundle["log_retention"]
+	log_retention := "365"
 
-	eventString := eventType
-	logv.Info(deviceTime)
-	timestamp, err := strconv.ParseInt(deviceTime, 10, 64)
-	logv.Info(timestamp)
-	err = collection.Insert(bson.M{
-		"_id":                 objectId,
-		"logType":             eventString,
-		"accountID":           account,
-		"message":             message,
-		"detail":              detail,
-		"isDevice":            true,
-		"deviceUUID":          deviceUUID,
-		"createUnixTimestamp": timestamp,
-		"fetchTimestamp":      time.Now().Unix(),
-	})
+	log_retention_target, _ := strconv.ParseInt(log_retention, 10, 64)
+
+	//logv.Info(log_retention_target)
+	logv.Info("log_retention:> ", log_retention)
+	//logv.Info(snapshot_retention)
+
+	timestamp := time.Now().Unix()
+
+	info, err = collection.RemoveAll(bson.M{"createUnixTimestamp": bson.M{"$lte": timestamp - 24*60*60* int64(log_retention_target)}})
 	if err != nil {
-		logv.Error("Write Log Insert err:> ", err)
+		logv.Error("Update CheckVmsLogRetention warn:> ", err)
 	}
-	return err
+	return info, err
 }
 

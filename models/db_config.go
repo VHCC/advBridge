@@ -117,6 +117,7 @@ var DB_VMS_2_Table_Kiosk_Reports = "vms2KioskReports"
 var DB_VMS_2_Table_Check_In_Form = "vms2CheckInForm"
 
 var DB_VMS_Log = "vmsLog"
+var DB_ADV_BRIDGE_Log = "bridgeLog"
 
 func FloatToString(input_num float64) string {
 	// to convert a float number to a string
