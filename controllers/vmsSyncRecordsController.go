@@ -224,11 +224,10 @@ func (cc *VmsSyncRecordsController) RequestSyncWithVMS(c *gin.Context) {
 	err := vmsServerController.SyncVMSKioskReportsData()
 	if err != nil {
 		c.JSON(200, gin.H{"code": 2001, "message": "OPERATION_FAIL, " + err.Error()})
-		logModel.WriteLog(models.EVENT_TYPE_VMS_SERVER_SYNC_FAIL, queryUser.AccountID, "OPERATION_FAIL, " + err.Error(), nil)
+		logModel.WriteLog(models.EVENT_TYPE_VMS_KIOSK_REPORTS_SYNC_FAIL, queryUser.AccountID, "OPERATION_FAIL, " + err.Error(), nil)
 		c.Abort()
 		return
 	}
-	logModel.WriteLog(models.EVENT_TYPE_VMS_SERVER_SYNC_SUCCESS, queryUser.AccountID, "SUCCESS", nil)
 	c.JSON(200, gin.H{"code": 0, "message": "SUCCESS"})
 }
 

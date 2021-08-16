@@ -7,6 +7,7 @@ package apiForms
 				contains as bellow </br>
 				1. accountID, </br>
 				2. logType, </br>
+				3. createUnixTimestamp, </br>
  * @apiParam {Boolean} desc desc <a style="color:red">[required]</a>. <br/>
  * @apiParam {int} startIndex startIndex <a style="color:red">[required]</a>. <br/>
  * @apiParam {int} count count <a style="color:red">[required]</a>. <br/>
@@ -22,7 +23,7 @@ package apiForms
 						4. "KIOSK-LOCATION-CREATE", </br>
 						5. "KIOSK-LOCATION-UPDATE", </br>
 						6. "KIOSK-LOCATION-DELETE", </br>
-						7. "BRIDGE_LOG-CHECK", </br>
+						7. "BRIDGE-LOG-DELETE", </br>
 						8. "RFID-CONNECT-SUCCESS", </br>
 						9. "VMS-CONNECT-SUCCESS", </br>
 						10. "HR-CONNECT-SUCCESS", </br>
@@ -36,11 +37,12 @@ package apiForms
 						18. "VMS-KIOSK-DEVICE-SYNC-FAIL", </br>
 						19. "HR-SERVER-SYNC-FAIL", </br>
 						20. "HR-SERVER-SYNC-SUCCESS", </br>
-						21. "VMS-SERVER-SYNC-SUCCESS", </br>
-						22. "VNS-SERVER-SYNC-FAIL", </br>
-						22. "VNS-SERVER-SYNC-FAIL", </br>
-						23. "HR-RECORDS-CHECK", </br>
-						24. "VMS-RECORDS-CHECK", </br>
+						21. "HR-RECORDS-DELETE", </br>
+						22. "VMS-RECORDS-DELETE", </br>
+						23. "LOGIN", </br>
+						24. "LOGIN-FAIL", </br>
+						25. "LOGOUT", </br>
+						26. "LOGOUT-FAIL", </br>
  * @apiParam {Integer} startUnixTimestamp startUnixTimestamp <a style="color:blue">[optional]</a>. <br/>
  * @apiParam {Integer} endUnixTimestamp endUnixTimestamp <a style="color:blue">[optional]</a>. <br/>
 
