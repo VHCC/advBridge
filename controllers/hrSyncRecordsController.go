@@ -31,7 +31,8 @@ var hrSyncRecordsModel = new(models.HrSyncRecordsModel)
 *				  1001:USER_TOKEN_INVALID (userToken invalid) </br>
 *                 11099:OPERATION_FAIL  </br>
 * @apiSuccess     {String}  message  錯誤訊息
-* @apiSuccess     {JsonArray} hrSyncRecordsData HR Server 同步紀錄
+* @apiSuccess     {Integer}  dataCounts  counts of HR SERVER 同步紀錄
+* @apiSuccess     {JsonArray} hrSyncRecordsData HR SERVER 同步紀錄
 * @apiSuccess     {Integer} dataCounts HR Server 同步紀錄總筆數
 *
 * @apiUse HRSyncRecordsResponse_List_Success
@@ -101,6 +102,7 @@ func (cc *HrSyncRecordsController) ListHRSyncRecordsByParameter(c *gin.Context) 
 *				  1001:USER_TOKEN_INVALID (userToken invalid) </br>
 *                 11099:OPERATION_FAIL  </br>
 * @apiSuccess     {String}  message  錯誤訊息
+* @apiSuccess     {Integer}  dataCounts  counts of 人員同步清單
 * @apiSuccess     {JsonObject} hrSyncRecord HR SERVER 同步紀錄
 * @apiSuccess     {JsonArray} syncVmsPersons 人員同步清單
 * @apiSuccess     {String} syncVmsPersons-action 人員同步詳細資料-同步動作 <br>

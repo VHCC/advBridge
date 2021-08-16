@@ -15,9 +15,9 @@ type BridgeLogController struct {
 }
 
 /**
-@api {POST} /api/v2/bridgeLog/listByParameter List Bridge Logs
+@api {POST} /api/v1/bridgeLog/listByParameter List Bridge Logs
 @apiDescription bridge server Log
-@apiversion 0.2.0
+@apiversion 0.0.1
 @apiGroup 009 BRIDGE LOG
 @apiName List Bridge Log By parameter
 
@@ -29,6 +29,7 @@ type BridgeLogController struct {
 *				  1001:USER_TOKEN_INVALID (userToken invalid) </br>
 *                 11099:OPERATION_FAIL  </br>
 * @apiSuccess     {String}  message  錯誤訊息
+* @apiSuccess     {Integer}  dataCounts  counts of logs
 * @apiSuccess     {JsonArray}  bridgeLogs  Logs of Bridge Server
 * @apiSuccess     {JsonObject}  bridgeLogs-detail  detail of log <br>
 								such as logType = BRIDGE_LOG-CHECK, detail will show how many records were removed <br>

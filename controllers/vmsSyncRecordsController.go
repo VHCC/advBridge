@@ -31,6 +31,7 @@ var vmsSyncRecordsModel = new(models.VmsSyncRecordsModel)
 *				  1001:USER_TOKEN_INVALID (userToken invalid) </br>
 *                 11099:OPERATION_FAIL  </br>
 * @apiSuccess     {String}  message  錯誤訊息
+* @apiSuccess     {Integer}  dataCounts  counts of VMS 同步紀錄
 * @apiSuccess     {JsonArray} vmsSyncRecordsData VMS 同步紀錄
 * @apiSuccess     {String} vmsSyncRecordsData-status VMS 同步狀態。<br>
 								1. Success <br>
@@ -104,6 +105,7 @@ func (cc *VmsSyncRecordsController) ListVmsSyncRecordsByParameter(c *gin.Context
 *				  1001:USER_TOKEN_INVALID (userToken invalid) </br>
 *                 11099:OPERATION_FAIL  </br>
 * @apiSuccess     {String}  message  錯誤訊息
+* @apiSuccess     {Integer}  dataCounts  counts of 簽到紀錄
 * @apiSuccess     {JsonObject} vmsSyncRecord VMS 同步紀錄
 * @apiSuccess     {JsonArray} syncKioskReports 簽到紀錄同步清單
 * @apiSuccess     {String} syncKioskReports-avalo_status 簽到紀錄狀況。<br>
