@@ -41,8 +41,8 @@ package apiForms
 						22. "VNS-SERVER-SYNC-FAIL", </br>
 						23. "HR-RECORDS-CHECK", </br>
 						24. "VMS-RECORDS-CHECK", </br>
- * @apiParam {Integer} startTimestamp startTimestamp <a style="color:blue">[optional]</a>. <br/>
- * @apiParam {Integer} endTimestamp endTimestamp <a style="color:blue">[optional]</a>. <br/>
+ * @apiParam {Integer} startUnixTimestamp startUnixTimestamp <a style="color:blue">[optional]</a>. <br/>
+ * @apiParam {Integer} endUnixTimestamp endUnixTimestamp <a style="color:blue">[optional]</a>. <br/>
 
 * @apiParamExample {json} Request-Example:
 {
@@ -53,8 +53,8 @@ package apiForms
 	"count": 7,
 	"keyWords": "Ruby"
 	"logTypes": [""],
-	"startTimestamp": 1603347601,
-	"endTimestamp": 1603347605,
+	"startUnixTimestamp": 1603347601,
+	"endUnixTimestamp": 1603347605,
 }
 */
 type ListByPBridgeLogDataValidate struct {
@@ -65,6 +65,6 @@ type ListByPBridgeLogDataValidate struct {
 	Count          *int      `json:"count" binding:"required"`
 	KeyWords       *string   `json:"keyWords,omitempty"`
 	LogTypes       *[]string `json:"logTypes,omitempty"`
-	StartTimestamp *int64    `json:"startTimestamp,omitempty"`
-	EndTimestamp   *int64    `json:"endTimestamp,omitempty"`
+	StartTimestamp *int64    `json:"startUnixTimestamp,omitempty"`
+	EndTimestamp   *int64    `json:"endUnixTimestamp,omitempty"`
 }
