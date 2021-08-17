@@ -250,7 +250,7 @@ func (m *MsSQLModel) SyncHRDB(conn *sql.DB, hrSyncObjectID bson.ObjectId) (err e
 								return err
 							}
 							collectionHRSyncRecordsPerson.Insert(bson.M{
-								"_id": bson.ObjectIdHex(personUUID),
+								"_id": bson.NewObjectId(),
 								"vmsPersonName": NAME,
 								"vmsPersonUnit": EPC,
 								"vmsPersonSerial": reverseHexString,
@@ -266,7 +266,7 @@ func (m *MsSQLModel) SyncHRDB(conn *sql.DB, hrSyncObjectID bson.ObjectId) (err e
 								return err
 							}
 							collectionHRSyncRecordsPerson.Insert(bson.M{
-								"_id": bson.ObjectIdHex(personUUID),
+								"_id": bson.NewObjectId(),
 								"vmsPersonName": NAME,
 								"vmsPersonUnit": EPC,
 								"vmsPersonSerial": reverseHexString,
@@ -279,7 +279,7 @@ func (m *MsSQLModel) SyncHRDB(conn *sql.DB, hrSyncObjectID bson.ObjectId) (err e
 					} else {
 						// KEEP
 						collectionHRSyncRecordsPerson.Insert(bson.M{
-							"_id": bson.ObjectIdHex(personUUID),
+							"_id": bson.NewObjectId(),
 							"vmsPersonName": NAME,
 							"vmsPersonUnit": EPC,
 							"vmsPersonSerial": reverseHexString,
@@ -365,7 +365,7 @@ func (m *MsSQLModel) SyncHRDB(conn *sql.DB, hrSyncObjectID bson.ObjectId) (err e
 					} else {
 						// KEEP
 						collectionHRSyncRecordsPerson.Insert(bson.M{
-							"_id": bson.ObjectIdHex(personUUID),
+							"_id": bson.NewObjectId(),
 							"vmsPersonName": NAME,
 							"vmsPersonUnit": EPC,
 							"vmsPersonSerial": MEB_CardNo,
