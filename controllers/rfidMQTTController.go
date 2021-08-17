@@ -75,17 +75,28 @@ func (topic *TopicController) ConnectTest(c *gin.Context) {
 		return
 	}
 
+	checkResult, queryUser := userModel.UserTokenCheck(data.UserToken)
+	_ = queryUser
+	switch checkResult {
+	case 1:
+	case 2:
+	case 1001:
+		c.JSON(200, gin.H{"code": 1001, "message": "USER_TOKEN_INVALID"})
+		c.Abort()
+		return
+	}
+
 	err := rfidMQTTModel.TestConnectionToRFIDServer(data.MQTTConnectionString, data.RFIDServerUsername, data.RFIDServerPassword)
 	if err != nil {
 		if err != nil {
 			c.JSON(200, gin.H{"code": 2001, "message": "CONNECT_ERROR, " + err.Error()})
-			logModel.WriteLog(models.EVENT_TYPE_RFID_SERVER_CONNECT_FAIL, data.RFIDServerUsername, err.Error(), nil)
+			logModel.WriteLog(models.EVENT_TYPE_RFID_SERVER_CONNECT_FAIL, queryUser.AccountID, err.Error(), nil)
 			c.Abort()
 			return
 		}
 	}
 
-	logModel.WriteLog(models.EVENT_TYPE_RFID_SERVER_CONNECT_SUCCESS, data.RFIDServerUsername, "SUCCESS", nil)
+	logModel.WriteLog(models.EVENT_TYPE_RFID_SERVER_CONNECT_SUCCESS, queryUser.AccountID, "SUCCESS", nil)
 
 	c.JSON(200, gin.H{"code": 0, "message": "SUCCESS"})
 }

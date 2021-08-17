@@ -2,12 +2,14 @@ package apiForms
 
 /**
  * @apiDefine VMSServerTestDataValidate
+ * @apiParam {String} userToken userToken <a style="color:red">[required]</a>. <br/>
  * @apiParam {String} account account <a style="color:red">[required]</a>.
  * @apiParam {String} password password <a style="color:red">[required]</a>.
  * @apiParam {String} protocol protocol <a style="color:red">[required]</a>.
  * @apiParam {String} host host <a style="color:red">[required]</a>.
 * @apiParamExample {json} Request-Example:
 {
+	"userToken": "5on_WOzj-08nSxTfgkaz12HYwswk8b9fRV4Ej9hyTMs=",
 	"account":"Admin",
 	"password":"Aa123456*",
 	"protocol":"http",
@@ -15,10 +17,11 @@ package apiForms
 }
 */
 type VMSServerTestDataValidate struct {
-	AccountID string `json:"account" binding:"required"`
-	Password  string `json:"password" binding:"required"`
-	Protocol  string `json:"protocol" binding:"required"`
-	Host      string `json:"host" binding:"required"`
+	UserToken *string `json:"userToken" binding:"required"`
+	AccountID string  `json:"account" binding:"required"`
+	Password  string  `json:"password" binding:"required"`
+	Protocol  string  `json:"protocol" binding:"required"`
+	Host      string  `json:"host" binding:"required"`
 }
 
 /**

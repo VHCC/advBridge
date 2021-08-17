@@ -65,12 +65,14 @@ func (cc *VmsController) SyncVMSKioskReportsData() (err error){
 * @apiSuccess     {Number} code  錯誤代碼 </br>
 *                 0:SUCCESS (成功) </br>
 *                 1:INVALID_PARAMETERS (參數缺少或錯誤) </br>
+*				  1001:USER_TOKEN_INVALID (userToken invalid) </br>
 *                 2001:CONNECT_ERROR </br>
 * @apiSuccess     {String}  message  錯誤訊息
 *
 * @apiUse HRServerResponse_Success
 * @apiUse UserResponse_Invalid_parameter
 * @apiUse HRServerResponse_Connect_Err
+* @apiUse UserResponse_user_token_invalid
 */
 func (cc *VmsController) VmsServerConnectionTest(c *gin.Context) {
 	var data apiForms.VMSServerTestDataValidate
@@ -83,14 +85,25 @@ func (cc *VmsController) VmsServerConnectionTest(c *gin.Context) {
 		return
 	}
 
-	err := vmsServerModel.ConnectionVMSTest(data.AccountID, data.Password, data.Protocol, data.Host)
-	if err != nil {
-		c.JSON(200, gin.H{"code": 2001, "message": "CONNECT_ERROR, " + err.Error()})
-		logModel.WriteLog(models.EVENT_TYPE_VMS_SERVER_CONNECT_FAIL, data.AccountID, "CONNECT_ERROR, " + err.Error(), nil)
+	checkResult, queryUser := userModel.UserTokenCheck(data.UserToken)
+	_ = queryUser
+	switch checkResult {
+	case 1:
+	case 2:
+	case 1001:
+		c.JSON(200, gin.H{"code": 1001, "message": "USER_TOKEN_INVALID"})
 		c.Abort()
 		return
 	}
-	logModel.WriteLog(models.EVENT_TYPE_VMS_SERVER_CONNECT_SUCCESS, data.AccountID, "SUCCESS", nil)
+
+	err := vmsServerModel.ConnectionVMSTest(data.AccountID, data.Password, data.Protocol, data.Host)
+	if err != nil {
+		c.JSON(200, gin.H{"code": 2001, "message": "CONNECT_ERROR, " + err.Error()})
+		logModel.WriteLog(models.EVENT_TYPE_VMS_SERVER_CONNECT_FAIL, queryUser.AccountID, "CONNECT_ERROR, " + err.Error(), nil)
+		c.Abort()
+		return
+	}
+	logModel.WriteLog(models.EVENT_TYPE_VMS_SERVER_CONNECT_SUCCESS, queryUser.AccountID, "SUCCESS", nil)
 	c.JSON(200, gin.H{"code": 0, "message": "SUCCESS"})
 }
 
