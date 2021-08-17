@@ -220,7 +220,6 @@ func (cc *VmsSyncRecordsController) RequestSyncWithVMS(c *gin.Context) {
 		return
 	}
 
-
 	err := vmsServerController.SyncVMSKioskReportsData()
 	if err != nil {
 		c.JSON(200, gin.H{"code": 2001, "message": "OPERATION_FAIL, " + err.Error()})

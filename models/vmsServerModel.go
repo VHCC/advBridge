@@ -281,7 +281,7 @@ func (m *VmsServerModel) SyncVMSReportData(objectID bson.ObjectId) {
 	//vmsSyncRecordsModel.UpdateStatus(objectID.Hex(), "Success", "")
 }
 
-func (m *VmsServerModel) SyncVMSKioskDeviceData() {
+func (m *VmsServerModel) SyncVMSKioskDeviceData() (err error) {
 	listKioskByPData := VmsListKioskByPBody{
 		m.userToken,
 		"deviceName",
@@ -297,12 +297,12 @@ func (m *VmsServerModel) SyncVMSKioskDeviceData() {
 	res, err := client.Do(req)
 	if err != nil {
 		logv.Error(err.Error())
-		return
+		return err
 	}
 	content, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		logv.Error(err.Error())
-		return
+		return err
 	}
 	respBody := string(content)
 
@@ -313,12 +313,52 @@ func (m *VmsServerModel) SyncVMSKioskDeviceData() {
 	if vmsListKioskByPResponse.Code != 0 {
 		logv.Error(errors.New(vmsListKioskByPResponse.Message))
 		WriteLog(EVENT_TYPE_VMS_KIOSK_DEVICE_SYNC_FAIL, "SYSTEM", vmsListKioskByPResponse.Message, nil)
+		return errors.New(vmsListKioskByPResponse.Message)
 	}
 	logv.Info(" === ListKioskDeviceByP Success, Response === Counts:> ", vmsListKioskByPResponse.DataCounts)
+
+	collectionKL := dbConnect.UseTable(DB_Name, DB_Table_ADV_KIOSK_LOCATION)
+	defer collectionKL.Database.Session.Close()
+
+	kioskLocations := []KioskLocation{}
+
+	err = collectionKL.Find(bson.M{}).All(&kioskLocations)
+	if err != nil {
+		logv.Error(err.Error())
+		return err
+	}
+
+	kioskDeviceUUIDArray := []string{}
+	kioskLocationUUIDArray := []string{}
+
+	for _, v := range kioskLocations {
+		kioskDeviceUUIDArray = append(kioskDeviceUUIDArray, v.DeviceUUID)
+		kioskLocationUUIDArray = append(kioskLocationUUIDArray, v.ID.Hex())
+	}
+
 	for i := 0; i < vmsListKioskByPResponse.DataCounts; i++ {
+		_, kioskDeviceUUIDArray , kioskLocationUUIDArray = isContainsKioskDeviceUUID(kioskDeviceUUIDArray, kioskLocationUUIDArray, vmsListKioskByPResponse.KioskDevices[i].ID.Hex())
 		saveKioskDeviceToBridgeDatabase(vmsListKioskByPResponse.KioskDevices[i])
 	}
+	//logv.Info(kioskDeviceUUIDArray)
+	for _, v := range kioskLocationUUIDArray {
+		collectionKL.RemoveId(bson.ObjectIdHex(v))
+	}
+	return nil
 }
+
+func isContainsKioskDeviceUUID(kioskDeviceUUIDArray []string, kioskLocationUUIDArray []string, kioskDeviceUUID string, ) (
+	isContained bool, newKioskDeviceArray []string, newKioskLocationArray []string) {
+	for index, v := range kioskDeviceUUIDArray {
+		if v == kioskDeviceUUID {
+			newKioskDeviceArray = append(kioskDeviceUUIDArray[:index], kioskDeviceUUIDArray[index+1:]...)
+			newKioskLocationArray = append(kioskLocationUUIDArray[:index], kioskLocationUUIDArray[index+1:]...)
+			return true, newKioskDeviceArray, newKioskLocationArray
+		}
+	}
+	return false, kioskDeviceUUIDArray, kioskLocationUUIDArray
+}
+
 
 func (m *VmsServerModel) SyncVMSPersonData() (syncDataCounts int){
 	listPersonByPData := VmsListPersonByPBody{
@@ -443,17 +483,19 @@ func saveKioskDeviceToBridgeDatabase(KioskData KioskDeviceInfo) () {
 	collection := dbConnect.UseTable(DB_Name, DB_Table_ADV_SYNC_VMS_KIOSK_DEVICES)
 	defer collection.Database.Session.Close()
 
-	kiosk := KioskDeviceInfo{}
+	collection.DropCollection()
 
-	err := collection.FindId(bson.ObjectIdHex(KioskData.ID.Hex())).One(&kiosk)
-	if err == nil {
-		logv.Info("Update Kiosk:> ", kiosk.ID.Hex())
-		err = collection.RemoveId(kiosk.ID.Hex())
-		if err == nil {
-			logv.Error(err.Error())
-			WriteLog(EVENT_TYPE_VMS_KIOSK_DEVICE_SYNC_FAIL, "SYSTEM", err.Error() + " :> " + kiosk.ID.Hex(), nil)
-		}
-	}
+	//kiosk := KioskDeviceInfo{}
+
+	//err := collection.FindId(bson.ObjectIdHex(KioskData.ID.Hex())).One(&kiosk)
+	//if err == nil {
+	//	logv.Info("Update Kiosk:> ", kiosk.ID.Hex())
+	//	err = collection.RemoveId(kiosk.ID.Hex())
+	//	if err == nil {
+	//		logv.Error(err.Error())
+	//		WriteLog(EVENT_TYPE_VMS_KIOSK_DEVICE_SYNC_FAIL, "SYSTEM", err.Error() + " :> " + kiosk.ID.Hex(), nil)
+	//	}
+	//}
 	//logv.Info("ADD KioskDevice UUID:> ", KioskData.ID.Hex())
 
 	err = collection.Insert(bson.M{

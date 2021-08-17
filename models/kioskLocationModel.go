@@ -134,3 +134,5 @@ func (m *VmsServerModel) UpdateKioskLocation(data apiForms.KioskLocationUpdateDa
 	}
 	return err
 }
+
+

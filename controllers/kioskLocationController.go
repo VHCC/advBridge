@@ -236,3 +236,76 @@ func (cc *KioskLocationController) EditLocation(c *gin.Context) {
 	logModel.WriteLog(models.EVENT_TYPE_KIOSK_LOCATION_UPDATE, queryUser.AccountID, "SUCCESS", nil)
 	c.JSON(200, gin.H{"code": 0, "message": "SUCCESS"})
 }
+
+/**
+@api {POST} /api/v1/kioskLocation/requestSyncWithVMS Request Sync With Vms
+@apiDescription Request Sync With Vms
+@apiversion 0.0.1
+@apiGroup  004 Kiosk Location
+@apiName Request Sync With Vms
+
+@apiUse RequestSyncWithVMSDataValidate
+
+* @apiSuccess     {Number} code  錯誤代碼 </br>
+*                 0:SUCCESS (成功) </br>
+*                 1:INVALID_PARAMETERS (參數缺少或錯誤) </br>
+*				  1001:USER_TOKEN_INVALID (userToken invalid) </br>
+*                 2001:CONNECT_ERROR </br>
+*                 11099:OPERATION_FAIL  </br>
+* @apiSuccess     {String}  message  錯誤訊息
+*
+* @apiUse HRServerResponse_Success
+* @apiUse UserResponse_Invalid_parameter
+* @apiUse HRServerResponse_Connect_Err
+* @apiUse Response_Operation_Fail
+* @apiUse UserResponse_user_token_invalid
+*/
+func (cc *KioskLocationController) RequestSyncWithVMS(c *gin.Context) {
+	var data apiForms.RequestSyncWithVMSDataValidate
+
+	// formData validation
+	if c.ShouldBind(&data) != nil {
+		logv.Error("ShouldBind err:> ", c.Errors)
+		c.JSON(200, gin.H{"code": 1, "message": "INVALID_PARAMETERS"})
+		c.Abort()
+		return
+	}
+
+	checkResult, queryUser := userModel.UserTokenCheck(data.UserToken)
+	_ = queryUser
+	switch checkResult {
+	case 1:
+	case 2:
+	case 1001:
+		c.JSON(200, gin.H{"code": 1001, "message": "USER_TOKEN_INVALID"})
+		c.Abort()
+		return
+	}
+
+	err, errCode := vmsServerModel.LoginVMS()
+	if err != nil {
+		logv.Error(err.Error() + ", code:> ", errCode)
+		switch errCode {
+		case 101:
+			c.JSON(200, gin.H{"code": 2001, "message": "CONNECT_ERROR, " + err.Error()})
+			logModel.WriteLog(models.EVENT_TYPE_VMS_KIOSK_DEVICE_SYNC_FAIL, queryUser.AccountID, "CONNECT_ERROR, " + err.Error(), nil)
+			c.Abort()
+			return
+		case 104:
+			c.JSON(200, gin.H{"code": 2001, "message": "CONNECT_ERROR, " + err.Error()})
+			logModel.WriteLog(models.EVENT_TYPE_VMS_KIOSK_DEVICE_SYNC_FAIL, queryUser.AccountID, "CONNECT_ERROR, " + err.Error(), nil)
+			c.Abort()
+			return
+		}
+	}
+
+	err = vmsServerModel.SyncVMSKioskDeviceData()
+	if err != nil {
+		c.JSON(200, gin.H{"code": 11099, "message": "OPERATION_FAIL, " + err.Error()})
+		logModel.WriteLog(models.EVENT_TYPE_VMS_KIOSK_DEVICE_SYNC_FAIL, queryUser.AccountID, "OPERATION_FAIL, " + err.Error(), nil)
+		c.Abort()
+		return
+	}
+	logModel.WriteLog(models.EVENT_TYPE_VMS_KIOSK_DEVICE_SYNC_SUCCESS, "SYSTEM", "SUCCESS", nil)
+	c.JSON(200, gin.H{"code": 0, "message": "SUCCESS"})
+}

@@ -46,8 +46,8 @@ func (cc *VmsController) SyncVMSKioskReportsData() (err error){
 	vmsSyncRecordsModel.UpdateStatus(objectID.Hex(), "Success", "")
 	logModel.WriteLog(models.EVENT_TYPE_VMS_KIOSK_REPORTS_SYNC_DONE, "SYSTEM", "SUCCESS", nil)
 
-	vmsServerModel.SyncVMSKioskDeviceData()
-	logModel.WriteLog(models.EVENT_TYPE_VMS_KIOSK_DEVICE_SYNC_SUCCESS, "SYSTEM", "SUCCESS", nil)
+	//vmsServerModel.SyncVMSKioskDeviceData()
+	//logModel.WriteLog(models.EVENT_TYPE_VMS_KIOSK_DEVICE_SYNC_SUCCESS, "SYSTEM", "SUCCESS", nil)
 
 	vmsServerModel.SyncVMSPersonData()
 	return err

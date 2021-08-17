@@ -74,6 +74,7 @@ func main() {
 		v1.POST("/kioskLocation/delete", kioskLocationController.RemoveLocation)
 		v1.POST("/kioskLocation/fetchAll", kioskLocationController.FetchAllLocation)
 		v1.POST("/kioskLocation/edit", kioskLocationController.EditLocation)
+		v1.POST("/kioskLocation/requestSyncWithVMS", kioskLocationController.RequestSyncWithVMS)
 
 		vmsServerConfigController := new(controllers.GlobalConfigController)
 		v1.POST("/serverConfig/getConfig", vmsServerConfigController.GetGlobalConfig)
