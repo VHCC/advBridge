@@ -226,8 +226,7 @@ func (m *VmsServerModel) ConnectionVMSTest(
 	content, err := ioutil.ReadAll(res.Body)
 	respBody := string(content)
 	//fmt.Printf("Post request with json result: %s\n", respBody)
-	errq := json.Unmarshal([]byte(respBody), vmsLoginResponse)
-	_ = errq
+	err = json.Unmarshal([]byte(respBody), vmsLoginResponse)
 
 	defer res.Body.Close()
 	if vmsLoginResponse.Code != 0 {
