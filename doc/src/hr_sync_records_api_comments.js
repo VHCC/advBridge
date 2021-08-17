@@ -82,8 +82,7 @@
                 "vmsPersonEmail": "",
                 "vmsPersonMemo": "A-0001",
                 "action": "create",
-                "status": "SUCCESS",
-                "createUnixTimestamp": 0
+                "status": "SUCCESS"
             },
             {
                 "vmsPersonUUID": "6116219191d32fe4be12346e",
@@ -93,8 +92,7 @@
                 "vmsPersonEmail": "",
                 "vmsPersonMemo": "A-0002",
                 "action": "create",
-                "status": "SUCCESS",
-                "createUnixTimestamp": 0
+                "status": "SUCCESS"
             },
             {
                 "vmsPersonUUID": "6116219191d32fe4be123470",
@@ -104,8 +102,7 @@
                 "vmsPersonEmail": "",
                 "vmsPersonMemo": "A-0033",
                 "action": "create",
-                "status": "SUCCESS",
-                "createUnixTimestamp": 0
+                "status": "SUCCESS"
             }
         ]
  *     }

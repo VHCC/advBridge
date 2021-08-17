@@ -175,5 +175,5 @@ type SyncVms2PersonResponse struct {
 	Action              string        `json:"action" bson:"action"`
 	Status              string        `json:"status" bson:"status"`
 	IsRealName          bool          `json:"-" bson:"isRealName"`
-	CreateUnixTimestamp int64         `json:"createUnixTimestamp" bson:"createUnixTimestamp"`
+	CreateUnixTimestamp int64         `json:"-" bson:"createUnixTimestamp"`
 }
