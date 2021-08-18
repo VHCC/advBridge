@@ -33,6 +33,8 @@ func (cc *VmsController) SyncVMSKioskReportsData() (err error){
 		}
 		return err
 	}
+	vmsServerModel.SyncVMSPersonData()
+
 	rfidMQTTModel.DisconnectionToRFIDServer()
 	err = rfidMQTTModel.ConnectionToRFIDServer()
 	if err != nil {
@@ -49,7 +51,6 @@ func (cc *VmsController) SyncVMSKioskReportsData() (err error){
 	//vmsServerModel.SyncVMSKioskDeviceData()
 	//logModel.WriteLog(models.EVENT_TYPE_VMS_KIOSK_DEVICE_SYNC_SUCCESS, "SYSTEM", "SUCCESS", nil)
 
-	vmsServerModel.SyncVMSPersonData()
 	return err
 }
 
