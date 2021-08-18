@@ -335,6 +335,11 @@ func (m *VmsServerModel) SyncVMSKioskDeviceData() (err error) {
 		kioskLocationUUIDArray = append(kioskLocationUUIDArray, v.ID.Hex())
 	}
 
+	collection := dbConnect.UseTable(DB_Name, DB_Table_ADV_SYNC_VMS_KIOSK_DEVICES)
+	defer collection.Database.Session.Close()
+
+	collection.DropCollection()
+
 	for i := 0; i < vmsListKioskByPResponse.DataCounts; i++ {
 		_, kioskDeviceUUIDArray , kioskLocationUUIDArray = isContainsKioskDeviceUUID(kioskDeviceUUIDArray, kioskLocationUUIDArray, vmsListKioskByPResponse.KioskDevices[i].ID.Hex())
 		saveKioskDeviceToBridgeDatabase(vmsListKioskByPResponse.KioskDevices[i])
@@ -523,8 +528,6 @@ func saveReportsToBridgeDatabase(recordsUUID string, KRData KioskReport) () {
 func saveKioskDeviceToBridgeDatabase(KioskData KioskDeviceInfo) () {
 	collection := dbConnect.UseTable(DB_Name, DB_Table_ADV_SYNC_VMS_KIOSK_DEVICES)
 	defer collection.Database.Session.Close()
-
-	collection.DropCollection()
 
 	//kiosk := KioskDeviceInfo{}
 
