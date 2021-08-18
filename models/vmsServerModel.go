@@ -477,6 +477,44 @@ func saveReportsToBridgeDatabase(recordsUUID string, KRData KioskReport) () {
 			"checkInUuid":                 KRData.CheckInUuid,
 			"vmsPerson":                   KRData.VmsPerson[0],
 		})
+	} else {
+		var vmsPerson = VmsPerson{}
+		vmsPerson.ID = bson.NewObjectId()
+		vmsPerson.VmsPersonSerial = "NOT EXIST"
+		vmsPerson.VmsPersonName = "NOT EXIST"
+		vmsPerson.VmsPersonEmail = "NOT EXIST"
+		vmsPerson.VmsPersonMemo = "NOT EXIST"
+		vmsPerson.VmsPersonUnit = "NOT EXIST"
+		err = collection.Insert(bson.M{
+			"_id":                         KRData.ID,
+			"recordsUUID":                 recordsUUID,
+			"mappingPersonUUID":           KRData.MappingPersonUUID,
+			"avalo_device":                KRData.AvaloDevice,
+			"avalo_device_uuid":           KRData.AvaloDeviceUuid,
+			"avalo_device_group":          KRData.AvaloDeviceGroup,
+			"avalo_interface":             KRData.AvaloInterface,
+			"avalo_snapshot":              KRData.AvaloSnapshot,
+			"avalo_status":                KRData.AvaloStatus,
+			"avalo_exception":             KRData.AvaloException,
+			"avalo_serial":                KRData.AvaloSerial,
+			"avalo_name":                  KRData.AvaloName,
+			"avalo_visitor":               KRData.AvaloVisitor,
+			"avalo_email":                 KRData.AvaloEmail,
+			"avalo_mode":                  KRData.AvaloMode,
+			"avalo_department":            KRData.AvaloDepartment,
+			"avalo_enable_temperature":    KRData.AvaloEnableTemperature,
+			"avalo_temperature":           KRData.AvaloTemperature,
+			"avalo_temperature_threshold": KRData.AvaloTemperatureThreshold,
+			"avalo_temperature_adjust":    KRData.AvaloTemperatureAdjust,
+			"avalo_temperature_unit":      KRData.AvaloTemperatureUnit,
+			"avalo_enable_mask":           KRData.AvaloEnableMask,
+			"avalo_mask":                  KRData.AvaloMask,
+			"avalo_utc_timestamp":         KRData.AvaloUtcTimestamp,
+			"avalo_passports":             KRData.AvaloPassports,
+			"report_templateUUID":         KRData.ReportTemplateUUID,
+			"checkInUuid":                 KRData.CheckInUuid,
+			"vmsPerson":                   vmsPerson,
+		})
 	}
 
 
