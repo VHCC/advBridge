@@ -433,49 +433,53 @@ func saveReportsToBridgeDatabase(recordsUUID string, KRData KioskReport) () {
 		return
 	}
 
-	rfidMQTTModel.PublishToRFIDServer(KRData.VmsPerson[0].VmsPersonSerial,
-		KRData.AvaloDeviceUuid,
-		strconv.FormatFloat(float64(KRData.AvaloTemperature), 'f', 1, 64))
+	if len(KRData.VmsPerson) > 0 {
+		rfidMQTTModel.PublishToRFIDServer(KRData.VmsPerson[0].VmsPersonSerial,
+			KRData.AvaloDeviceUuid,
+			strconv.FormatFloat(float64(KRData.AvaloTemperature), 'f', 1, 64))
 
-	logv.Info("ADD KioskReports UUID:> ", KRData.ID.Hex())
+		logv.Info("ADD KioskReports UUID:> ", KRData.ID.Hex())
 
-	err = collectionSyncRecords.UpdateId(bson.ObjectIdHex(recordsUUID), bson.M{"$set": bson.M{"RFIDDataSendCounts": sr.RFIDDataSendCounts + 1}})
-	if err != nil {
-		logv.Error(err.Error())
-		WriteLog(EVENT_TYPE_VMS_KIOSK_REPORTS_SYNC_FAIL, "SYSTEM", err.Error() + " :> " + recordsUUID, nil)
-		return
+		err = collectionSyncRecords.UpdateId(bson.ObjectIdHex(recordsUUID), bson.M{"$set": bson.M{"RFIDDataSendCounts": sr.RFIDDataSendCounts + 1}})
+		if err != nil {
+			logv.Error(err.Error())
+			WriteLog(EVENT_TYPE_VMS_KIOSK_REPORTS_SYNC_FAIL, "SYSTEM", err.Error() + " :> " + recordsUUID, nil)
+			return
+		}
+
+		err = collection.Insert(bson.M{
+			"_id":                         KRData.ID,
+			"recordsUUID":                 recordsUUID,
+			"mappingPersonUUID":           KRData.MappingPersonUUID,
+			"avalo_device":                KRData.AvaloDevice,
+			"avalo_device_uuid":           KRData.AvaloDeviceUuid,
+			"avalo_device_group":          KRData.AvaloDeviceGroup,
+			"avalo_interface":             KRData.AvaloInterface,
+			"avalo_snapshot":              KRData.AvaloSnapshot,
+			"avalo_status":                KRData.AvaloStatus,
+			"avalo_exception":             KRData.AvaloException,
+			"avalo_serial":                KRData.AvaloSerial,
+			"avalo_name":                  KRData.AvaloName,
+			"avalo_visitor":               KRData.AvaloVisitor,
+			"avalo_email":                 KRData.AvaloEmail,
+			"avalo_mode":                  KRData.AvaloMode,
+			"avalo_department":            KRData.AvaloDepartment,
+			"avalo_enable_temperature":    KRData.AvaloEnableTemperature,
+			"avalo_temperature":           KRData.AvaloTemperature,
+			"avalo_temperature_threshold": KRData.AvaloTemperatureThreshold,
+			"avalo_temperature_adjust":    KRData.AvaloTemperatureAdjust,
+			"avalo_temperature_unit":      KRData.AvaloTemperatureUnit,
+			"avalo_enable_mask":           KRData.AvaloEnableMask,
+			"avalo_mask":                  KRData.AvaloMask,
+			"avalo_utc_timestamp":         KRData.AvaloUtcTimestamp,
+			"avalo_passports":             KRData.AvaloPassports,
+			"report_templateUUID":         KRData.ReportTemplateUUID,
+			"checkInUuid":                 KRData.CheckInUuid,
+			"vmsPerson":                   KRData.VmsPerson[0],
+		})
 	}
 
-	err = collection.Insert(bson.M{
-		"_id":                         KRData.ID,
-		"recordsUUID":                 recordsUUID,
-		"mappingPersonUUID":           KRData.MappingPersonUUID,
-		"avalo_device":                KRData.AvaloDevice,
-		"avalo_device_uuid":           KRData.AvaloDeviceUuid,
-		"avalo_device_group":          KRData.AvaloDeviceGroup,
-		"avalo_interface":             KRData.AvaloInterface,
-		"avalo_snapshot":              KRData.AvaloSnapshot,
-		"avalo_status":                KRData.AvaloStatus,
-		"avalo_exception":             KRData.AvaloException,
-		"avalo_serial":                KRData.AvaloSerial,
-		"avalo_name":                  KRData.AvaloName,
-		"avalo_visitor":               KRData.AvaloVisitor,
-		"avalo_email":                 KRData.AvaloEmail,
-		"avalo_mode":                  KRData.AvaloMode,
-		"avalo_department":            KRData.AvaloDepartment,
-		"avalo_enable_temperature":    KRData.AvaloEnableTemperature,
-		"avalo_temperature":           KRData.AvaloTemperature,
-		"avalo_temperature_threshold": KRData.AvaloTemperatureThreshold,
-		"avalo_temperature_adjust":    KRData.AvaloTemperatureAdjust,
-		"avalo_temperature_unit":      KRData.AvaloTemperatureUnit,
-		"avalo_enable_mask":           KRData.AvaloEnableMask,
-		"avalo_mask":                  KRData.AvaloMask,
-		"avalo_utc_timestamp":         KRData.AvaloUtcTimestamp,
-		"avalo_passports":             KRData.AvaloPassports,
-		"report_templateUUID":         KRData.ReportTemplateUUID,
-		"checkInUuid":                 KRData.CheckInUuid,
-		"vmsPerson":                   KRData.VmsPerson[0],
-	})
+
 }
 
 func saveKioskDeviceToBridgeDatabase(KioskData KioskDeviceInfo) () {
