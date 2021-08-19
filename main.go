@@ -190,7 +190,7 @@ func main() {
 		}()
 	}
 
-	gocron.ChangeLoc(time.UTC)
+	gocron.ChangeLoc(time.Local)
 	gocron.Every(1).Days().At("05:00").Do(syncTask)
 	//gocron.Every(1).Second().Do(syncTask)
 	gocron.Start()
