@@ -41,13 +41,19 @@ func (cc *MsSQLController) SyncHRDatabase() (){
 		logModel.WriteLog(models.EVENT_TYPE_HR_SERVER_CONNECT_FAIL, "SYSTEM", "CONNECT_ERROR, " + err.Error(), nil)
 		return
 	}
+
+	syncVmsDataCounts := vmsServerModel.SyncVMSPersonData()
+	hrSyncRecordsModel.UpdateVMSSync(objectID.Hex(), syncVmsDataCounts)
+	
 	err = msSQLModel.SyncHRDB(conn, objectID)
 	if err != nil {
 		hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "HR Server 撈取資料失敗, " + err.Error())
 		logModel.WriteLog(models.EVENT_TYPE_HR_SERVER_SYNC_FAIL, "SYSTEM", "OPERATION_FAIL, " + err.Error(), nil)
 		return
 	}
+	logModel.WriteLog(models.EVENT_TYPE_HR_SERVER_SYNC_SUCCESS, "SYSTEM", "SUCCESS", nil)
 	hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Success", "")
+
 }
 
 
