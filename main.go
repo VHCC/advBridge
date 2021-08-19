@@ -34,7 +34,9 @@ func main() {
 	router.Use(cors.Default())
 
 	router.LoadHTMLGlob("templates/*.html")
-	router.Static("/js", "./templates")
+	//router.Static("/js", "./templates")
+	router.Static("/js", "./web/build/js")
+
 
 	// ================ v1 ===================
 	ticker10sv1 := time.NewTicker(1 * 10 * time.Second)
@@ -350,11 +352,11 @@ func main() {
 		c.String(200, "%s", "ADB Bridge v0.00.01")
 	})
 
-	router.Use(static.Serve("/", static.LocalFile("web/", true)))
+	router.Use(static.Serve("/", static.LocalFile("./web/build/", true)))
 	// STEP 4：除了有定義路由的 API 之外，其他都會到前端框架
 	// https://github.com/go-ggz/ggz/blob/master/api/index.go
 	router.NoRoute(func(ctx *gin.Context) {
-		file, _ := ioutil.ReadFile("web/index.html")
+		file, _ := ioutil.ReadFile("web/build/index.html")
 		etag := fmt.Sprintf("%x", md5.Sum(file)) //nolint:gosec
 		ctx.Header("ETag", etag)
 		ctx.Header("Cache-Control", "no-cache")
