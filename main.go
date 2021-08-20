@@ -190,8 +190,8 @@ func main() {
 		}()
 	}
 
-	gocron.ChangeLoc(time.Local)
-	gocron.Every(1).Days().At("05:00").Do(syncTask)
+	gocron.ChangeLoc(time.UTC)
+	gocron.Every(1).Days().At("21:00").Do(syncTask)
 	//gocron.Every(1).Second().Do(syncTask)
 	gocron.Start()
 
@@ -349,7 +349,7 @@ func main() {
 	*
 	*/
 	router.GET("/server/info", func(c *gin.Context) {
-		c.String(200, "%s", "ADB Bridge v0.00.01")
+		c.String(200, "%s", "ADB Bridge v1.00.00")
 	})
 
 	router.Use(static.Serve("/", static.LocalFile("./web/build/", true)))

@@ -407,6 +407,7 @@ func (m *MsSQLModel) SyncHRDB(conn *sql.DB, hrSyncObjectID bson.ObjectId) (err e
 		}
 	}
 	for _, uuid := range personUUIDArray {
+		err = collectionHRSyncRecords.FindId(bson.ObjectIdHex(hrSyncObjectID.Hex())).One(&hr)
 		DeleteVMSPersonData(uuid)
 		err = collectionHRSyncRecords.UpdateId(bson.ObjectIdHex(hrSyncObjectID.Hex()), bson.M{"$set": bson.M{"deleteVmsPersonDataCounts": hr.DeleteVmsPersonDataCounts + 1}})
 		if err != nil {
