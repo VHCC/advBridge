@@ -228,6 +228,7 @@ func (m *HrSyncRecordsModel) CheckHrRecordsRetention() (info *mgo.ChangeInfo, er
 	timestamp := time.Now().Unix()
 
 	info, err = collection.RemoveAll(bson.M{"createUnixTimestamp": bson.M{"$lte": timestamp - 24*60*60* int64(log_retention_target)}})
+	info, err = collection.RemoveAll(bson.M{"createUnixTimeStamp": bson.M{"$lte": timestamp - 24*60*60* int64(log_retention_target)}})
 	if err != nil {
 		logv.Error("Update CheckHrRecordsRetention warn:> ", err)
 	}

@@ -220,7 +220,7 @@ func (m *VmsSyncRecordsModel) CheckVMSRecordsRetention() (info *mgo.ChangeInfo, 
 
 	timestamp := time.Now().Unix()
 
-	info, err = collection.RemoveAll(bson.M{"createUnixTimestamp": bson.M{"$lte": timestamp - 24*60*60* int64(log_retention_target)}})
+	info, err = collection.RemoveAll(bson.M{"createUnixTimeStamp": bson.M{"$lte": timestamp - 24*60*60* int64(log_retention_target)}})
 	if err != nil {
 		logv.Error("Update CheckVMSRecordsRetention warn:> ", err)
 	}

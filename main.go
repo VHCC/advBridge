@@ -170,11 +170,9 @@ func main() {
 					nowTimeStamp := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(),
 						time.Now().Hour(), time.Now().Minute(), time.Now().Second(), 0, time.UTC)
 					//logv.Info("now:> ", nowTimeStamp.Unix(), " || targetTime:> ", targetTimeStamp.Unix())
-					//logv.Info()
 					//
 					if nowTimeStamp.Unix() > targetTimeStamp.Unix() {
 						logv.Info(" ============= CheckDataRetentions ===========")
-						// TODO Check retentionData
 						//vms2KioskReportsController.CheckKioskReportsRetentions()
 						bridgeLogController.CheckBridgeLogRetentions()
 					}
@@ -192,6 +190,7 @@ func main() {
 
 	gocron.ChangeLoc(time.UTC)
 	gocron.Every(1).Days().At("21:00").Do(syncTask)
+	gocron.Every(1).Days().At("23:59").Do(logCheckTask)
 	//gocron.Every(1).Second().Do(syncTask)
 	gocron.Start()
 
@@ -443,4 +442,11 @@ func syncTask() {
 	msSQLController := new(controllers.MsSQLController)
 	logv.Info(" ============= msSQLController.SyncHRDatabase ===========")
 	msSQLController.SyncHRDatabase()
+}
+
+
+func logCheckTask() {
+	bridgeLogController := new(controllers.BridgeLogController)
+	logv.Info(" ============= CheckDataRetentions ===========")
+	bridgeLogController.CheckBridgeLogRetentions()
 }
