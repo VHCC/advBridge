@@ -23,11 +23,13 @@ func (cc *VmsController) SyncVMSKioskReportsData() (err error){
 		logv.Error(err.Error() + ", code:> ", errCode)
 		switch errCode {
 		case 101:
-			vmsSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Vms Server 連線失敗")
+			//vmsSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Vms Server 連線失敗")
+			vmsSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "vms_server_connect_fail")
 			logModel.WriteLog(models.EVENT_TYPE_VMS_KIOSK_REPORTS_SYNC_FAIL, "SYSTEM", err.Error(), nil)
 			return err
 		case 104:
-			vmsSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Vms Server 登入失敗")
+			//vmsSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Vms Server 登入失敗")
+			vmsSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "vms_server_login_fail")
 			logModel.WriteLog(models.EVENT_TYPE_VMS_KIOSK_REPORTS_SYNC_FAIL, "SYSTEM", err.Error(), nil)
 			return err
 		}
@@ -39,7 +41,8 @@ func (cc *VmsController) SyncVMSKioskReportsData() (err error){
 	err = rfidMQTTModel.ConnectionToRFIDServer()
 	if err != nil {
 		logv.Error(err.Error())
-		vmsSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Mqtt 連線失敗")
+		//vmsSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Mqtt 連線失敗")
+		vmsSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "mqtt_server_connect_fail")
 		logModel.WriteLog(models.EVENT_TYPE_RFID_SERVER_CONNECT_FAIL, "SYSTEM", err.Error(), nil)
 		return err
 	}

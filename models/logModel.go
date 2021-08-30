@@ -177,7 +177,13 @@ func WriteLog(eventType int, account string, message string, detail map[string]i
 
 	if data.StartTimestamp != nil && data.EndTimestamp != nil {
 		match_stage["createUnixTimestamp"] = bson.M{"$gte": *data.StartTimestamp, "$lte": *data.EndTimestamp}
+	} else if data.StartTimestamp != nil {
+		match_stage["createUnixTimestamp"] = bson.M{"$gte": *data.StartTimestamp}
+	} else if data.EndTimestamp != nil {
+		match_stage["createUnixTimestamp"] = bson.M{"$lte": *data.EndTimestamp}
 	}
+
+	logv.Info(match_stage)
 
 	//logv.Info(data)
 	//logv.Info(match_stage)
@@ -261,7 +267,7 @@ func (m *VmsLogModel) CheckVmsLogRetention() (info *mgo.ChangeInfo, err error) {
 
 	timestamp := time.Now().Unix()
 
-	info, err = collection.RemoveAll(bson.M{"createUnixTimestamp": bson.M{"$lte": timestamp - 24*60*60* int64(log_retention_target)}})
+	info, err = collection.RemoveAll(bson.M{"createUnixTimestamp": bson.M{"$lte": timestamp - 1* int64(log_retention_target)}})
 	if err != nil {
 		logv.Error("Update CheckVmsLogRetention warn:> ", err)
 	}

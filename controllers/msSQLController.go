@@ -24,11 +24,13 @@ func (cc *MsSQLController) SyncHRDatabase() (){
 		logv.Error(err.Error() + ", code:> ", errCode)
 		switch errCode {
 		case 101:
-			hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Vms Server 連線失敗")
+			//hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Vms Server 連線失敗")
+			vmsSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "vms_server_connect_fail")
 			logModel.WriteLog(models.EVENT_TYPE_VMS_SERVER_CONNECT_FAIL, "SYSTEM", "CONNECT_ERROR, " + err.Error(), nil)
 			return
 		case 104:
-			hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Vms Server 登入失敗")
+			//hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Vms Server 登入失敗")
+			vmsSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "vms_server_login_fail")
 			logModel.WriteLog(models.EVENT_TYPE_VMS_SERVER_CONNECT_FAIL, "SYSTEM", "CONNECT_ERROR, " + err.Error(), nil)
 			return
 		}
@@ -37,7 +39,8 @@ func (cc *MsSQLController) SyncHRDatabase() (){
 
 	conn, err := msSQLModel.ConnectBySystem()
 	if err != nil {
-		hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "HR Server 連線失敗, " + err.Error())
+		//hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "HR Server 連線失敗")
+		hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "hr_server_connect_fail")
 		logModel.WriteLog(models.EVENT_TYPE_HR_SERVER_CONNECT_FAIL, "SYSTEM", "CONNECT_ERROR, " + err.Error(), nil)
 		return
 	}
@@ -47,7 +50,8 @@ func (cc *MsSQLController) SyncHRDatabase() (){
 	
 	err = msSQLModel.SyncHRDB(conn, objectID)
 	if err != nil {
-		hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "HR Server 撈取資料失敗, " + err.Error())
+		//hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "HR Server 撈取資料失敗, " + err.Error())
+		hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "hr_server_fetch_data_fail")
 		logModel.WriteLog(models.EVENT_TYPE_HR_SERVER_SYNC_FAIL, "SYSTEM", "OPERATION_FAIL, " + err.Error(), nil)
 		return
 	}
@@ -108,9 +112,11 @@ func (cc *MsSQLController) RequestSyncHRDatabase(c *gin.Context){
 		logv.Error(err.Error() + ", code:> ", errCode)
 		switch errCode {
 		case 101:
-			hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Vms Server 連線失敗")
+			//hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Vms Server 連線失敗")
+			hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "vms_server_connect_fail")
 		case 104:
-			hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Vms Server 登入失敗")
+			//hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Vms Server 登入失敗")
+			hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "vms_server_login_fail")
 		}
 		logModel.WriteLog(models.EVENT_TYPE_VMS_SERVER_CONNECT_FAIL, queryUser.AccountID, "CONNECT_ERROR, " + err.Error(), nil)
 		c.JSON(200, gin.H{"code": 2001, "message": "CONNECT_ERROR, " + err.Error()})
@@ -120,7 +126,8 @@ func (cc *MsSQLController) RequestSyncHRDatabase(c *gin.Context){
 
 	conn, err := msSQLModel.ConnectBySystem()
 	if err != nil {
-		hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "HR Server 連線失敗, " + err.Error())
+		//hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "HR Server 連線失敗, " + err.Error())
+		hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "hr_server_connect_fail")
 		c.JSON(200, gin.H{"code": 2001, "message": "CONNECT_ERROR, " + err.Error()})
 		logModel.WriteLog(models.EVENT_TYPE_HR_SERVER_CONNECT_FAIL, queryUser.AccountID, "CONNECT_ERROR, " + err.Error(), nil)
 		c.Abort()
@@ -132,7 +139,8 @@ func (cc *MsSQLController) RequestSyncHRDatabase(c *gin.Context){
 
 	err = msSQLModel.SyncHRDB(conn, objectID)
 	if err != nil {
-		hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "HR Server 撈取資料失敗, " + err.Error())
+		//hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "HR Server 撈取資料失敗, " + err.Error())
+		hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "hr_server_fetch_data_fail")
 		c.JSON(200, gin.H{"code": 11099, "message": "OPERATION_FAIL, " + err.Error()})
 		logModel.WriteLog(models.EVENT_TYPE_HR_SERVER_SYNC_FAIL, queryUser.AccountID, "OPERATION_FAIL, " + err.Error(), nil)
 		c.Abort()
