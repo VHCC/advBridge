@@ -267,7 +267,7 @@ func (m *VmsLogModel) CheckVmsLogRetention() (info *mgo.ChangeInfo, err error) {
 
 	timestamp := time.Now().Unix()
 
-	info, err = collection.RemoveAll(bson.M{"createUnixTimestamp": bson.M{"$lte": timestamp - 1* int64(log_retention_target)}})
+	info, err = collection.RemoveAll(bson.M{"createUnixTimestamp": bson.M{"$lte": timestamp - 24*60*60 * int64(log_retention_target)}})
 	if err != nil {
 		logv.Error("Update CheckVmsLogRetention warn:> ", err)
 	}
