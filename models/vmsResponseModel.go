@@ -30,6 +30,7 @@ type KioskReport struct {
 	ReportTemplateUUID        string        `json:"report_templateUUID" bson:"report_templateUUID"`
 	CheckInUuid               string        `json:"checkInUuid" bson:"checkInUuid"`
 	VmsPerson                 []VmsPerson   `json:"vmsPerson" bson:"vmsPerson"`
+	SyncStatus                bool          `json:"syncStatus" bson:"syncStatus"`
 }
 
 type KioskReportResponse struct {
@@ -60,6 +61,7 @@ type KioskReportResponse struct {
 	ReportTemplateUUID        string        `json:"-" bson:"report_templateUUID"`
 	CheckInUuid               string        `json:"-" bson:"checkInUuid"`
 	VmsPerson                 VmsPerson     `json:"vmsPerson" bson:"vmsPerson"`
+	SyncStatus                bool          `json:"syncStatus" bson:"syncStatus"`
 }
 
 type VmsPerson struct {

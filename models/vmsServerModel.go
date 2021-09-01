@@ -417,7 +417,8 @@ func saveReportsToBridgeDatabase(recordsUUID string, KRData KioskReport) () {
 	kr := KioskReport{}
 
 	err := collection.FindId(bson.ObjectIdHex(KRData.ID.Hex())).One(&kr)
-	if err == nil {
+
+	if err == nil && kr.SyncStatus {
 		//logv.Error("KioskReports UUID:> ", KRData.ID.Hex(), " already exist !")
 		return
 	}
@@ -438,10 +439,17 @@ func saveReportsToBridgeDatabase(recordsUUID string, KRData KioskReport) () {
 		return
 	}
 
+	logv.Info(KRData.VmsPerson)
+
 	if len(KRData.VmsPerson) > 0 {
-		rfidMQTTModel.PublishToRFIDServer(KRData.VmsPerson[0].VmsPersonSerial,
+		logv.Info("sync SUCCESS")
+		//rfidMQTTModel.PublishToRFIDServerTest()
+
+		if err = rfidMQTTModel.PublishToRFIDServer(KRData.VmsPerson[0].VmsPersonSerial,
 			KRData.AvaloDeviceUuid,
-			strconv.FormatFloat(float64(KRData.AvaloTemperature), 'f', 1, 64))
+			strconv.FormatFloat(float64(KRData.AvaloTemperature), 'f', 1, 64)); err != nil {
+			logv.Error(err)
+		}
 
 		logv.Info("ADD KioskReports UUID:> ", KRData.ID.Hex())
 
@@ -481,8 +489,10 @@ func saveReportsToBridgeDatabase(recordsUUID string, KRData KioskReport) () {
 			"report_templateUUID":         KRData.ReportTemplateUUID,
 			"checkInUuid":                 KRData.CheckInUuid,
 			"vmsPerson":                   KRData.VmsPerson[0],
+			"syncStatus":             	   true,
 		})
 	} else {
+		logv.Info("sync FAIL")
 		var vmsPerson = VmsPerson{}
 		vmsPerson.ID = bson.NewObjectId()
 		vmsPerson.VmsPersonSerial = "NOT EXIST"
@@ -491,7 +501,7 @@ func saveReportsToBridgeDatabase(recordsUUID string, KRData KioskReport) () {
 		vmsPerson.VmsPersonMemo = "NOT EXIST"
 		vmsPerson.VmsPersonUnit = "NOT EXIST"
 		err = collection.Insert(bson.M{
-			"_id":                         KRData.ID,
+			"_id":                         bson.NewObjectId(),
 			"recordsUUID":                 recordsUUID,
 			"mappingPersonUUID":           KRData.MappingPersonUUID,
 			"avalo_device":                KRData.AvaloDevice,
@@ -519,6 +529,7 @@ func saveReportsToBridgeDatabase(recordsUUID string, KRData KioskReport) () {
 			"report_templateUUID":         KRData.ReportTemplateUUID,
 			"checkInUuid":                 KRData.CheckInUuid,
 			"vmsPerson":                   vmsPerson,
+			"syncStatus":             	   false,
 		})
 	}
 

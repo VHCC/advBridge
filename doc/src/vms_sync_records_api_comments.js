@@ -95,7 +95,8 @@
                 "vmsPersonName": "temp name",
                 "vmsPersonSerial": "temp serialNumber",
                 "vmsPersonUnit": "temp unit"
-            }
+            },
+            "syncStatus": false
         },
         {
             "uuid": "610cffcd91d32f9c0389c645",
@@ -119,7 +120,8 @@
                 "vmsPersonName": "temp name",
                 "vmsPersonSerial": "temp serialNumber",
                 "vmsPersonUnit": "temp unit"
-            }
+            },
+            "syncStatus": true
         },
         {
             "uuid": "6110c1bd91d32fa798177c16",
@@ -143,7 +145,8 @@
                 "vmsPersonName": "temp name",
                 "vmsPersonSerial": "temp serialNumber",
                 "vmsPersonUnit": "temp unit"
-            }
+            },
+            "syncStatus": true
         }
     ],
     "vmsSyncRecord": {

@@ -14,6 +14,8 @@ type RFIDMQTTModel struct {
 	mqttClient mqtt.Client
 }
 
+var mainMqttClient mqtt.Client
+
 var rfidMQTTModel = new(RFIDMQTTModel)
 
 var RFIDTopic = "rfid_temp"
@@ -48,13 +50,15 @@ func (m *RFIDMQTTModel) ConnectionToRFIDServer() (err error) {
 		logv.Error(token.Error().Error())
 		return errors.New(token.Error().Error())
 	}
-	m.mqttClient = client
+	logv.Info(" ==== mqttClient connected SUCCESS ==== ")
+	//m.mqttClient = client
+	mainMqttClient = client
 	return nil
 }
 
 func (m *RFIDMQTTModel) DisconnectionToRFIDServer() () {
-	if m.mqttClient != nil {
-		m.mqttClient.Disconnect(0)
+	if mainMqttClient != nil {
+		mainMqttClient.Disconnect(0)
 	}
 }
 
@@ -82,6 +86,9 @@ type RFIDDataBody struct {
 }
 
 func (m *RFIDMQTTModel) PublishToRFIDServerTest() (){
+	if mainMqttClient == nil || !mainMqttClient.IsConnected() {
+		logv.Info("QQQQ")
+	}
 	RFIDData := RFIDDataBody{
 		"000000000000000000B02514",
 		time.Now().String(),
@@ -93,14 +100,13 @@ func (m *RFIDMQTTModel) PublishToRFIDServerTest() (){
 		"36.3",
 	}
 	RFIDData_json, _ := json.Marshal(RFIDData)
-	err := m.mqttClient.Publish(RFIDTopic, 0, false, RFIDData_json)
+	err := mainMqttClient.Publish(RFIDTopic, 1, false, RFIDData_json)
 	if err != nil {
-		//logv.Error("publishToRFIDServer:> ", err.Error())
 	}
 }
 
 func (m *RFIDMQTTModel) PublishToRFIDServer(ETAG string, kioskUUID string, temp string) (err error){
-	if m.mqttClient == nil || !m.mqttClient.IsConnected() {
+	if mainMqttClient == nil || !mainMqttClient.IsConnected() {
 		return errors.New("MQTT did not connected yet")
 	}
 	RFIDData := RFIDDataBody{
@@ -114,7 +120,7 @@ func (m *RFIDMQTTModel) PublishToRFIDServer(ETAG string, kioskUUID string, temp 
 		temp,
 	}
 	RFIDDataJson, _ := json.Marshal(RFIDData)
-	m.mqttClient.Publish(RFIDTopic, 0, false, RFIDDataJson)
+	mainMqttClient.Publish(RFIDTopic, 1, false, RFIDDataJson)
 	return err
 }
 
