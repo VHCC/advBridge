@@ -25,12 +25,12 @@ func (cc *MsSQLController) SyncHRDatabase() (){
 		switch errCode {
 		case 101:
 			//hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Vms Server 連線失敗")
-			vmsSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "vms_server_connect_fail")
+			hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "vms_server_connect_fail")
 			logModel.WriteLog(models.EVENT_TYPE_VMS_SERVER_CONNECT_FAIL, "SYSTEM", "CONNECT_ERROR, " + err.Error(), nil)
 			return
 		case 104:
 			//hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "Vms Server 登入失敗")
-			vmsSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "vms_server_login_fail")
+			hrSyncRecordsModel.UpdateStatus(objectID.Hex(), "Fail", "vms_server_login_fail")
 			logModel.WriteLog(models.EVENT_TYPE_VMS_SERVER_CONNECT_FAIL, "SYSTEM", "CONNECT_ERROR, " + err.Error(), nil)
 			return
 		}
