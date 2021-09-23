@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 type VmsServerModel struct {
@@ -51,6 +52,8 @@ type VmsListKRByPBody struct {
 	StartIndex      int      `json:"startIndex"`
 	Count           int      `json:"count"`
 	Avalo_interface []string `json:"avalo_interface"`
+	StartTimestamp  int64    `json:"startTimestamp"`
+	EndTimestamp    int64    `json:"endTimestamp"`
 }
 
 type VmsListKRByPResponse struct {
@@ -113,7 +116,7 @@ type VmsCreatePersonBody struct {
 	VmsPersonUnit   string `json:"vmsPersonUnit"`
 	VmsPersonSerial string `json:"vmsPersonSerial"`
 	VmsPersonMemo   string `json:"vmsPersonMemo"`
-	VmsPersonEmail   string `json:"vmsPersonEmail"`
+	VmsPersonEmail  string `json:"vmsPersonEmail"`
 }
 
 type VmsCreatePersonResponse struct {
@@ -123,8 +126,8 @@ type VmsCreatePersonResponse struct {
 
 // =========== VmsDeletePersonBody
 type VmsDeletePersonBody struct {
-	UserToken       string `json:"userToken"`
-	VmsPersonUUID   string `json:"vmsPersonUUID"`
+	UserToken     string `json:"userToken"`
+	VmsPersonUUID string `json:"vmsPersonUUID"`
 }
 
 type VmsDeletePersonResponse struct {
@@ -239,10 +242,12 @@ func (m *VmsServerModel) SyncVMSReportData(objectID bson.ObjectId) {
 	listKRByPData := VmsListKRByPBody{
 		m.userToken,
 		"avalo_utc_timestamp",
-		true,
+		false,
 		0,
-		-1,
+		500,
 		[]string{"rfid"},
+		(time.Now().Unix() - 60*60*24*7) * 1000,
+		time.Now().Unix() * 1000,
 	}
 	listKRByPDataJson, _ := json.Marshal(listKRByPData)
 
@@ -341,7 +346,7 @@ func (m *VmsServerModel) SyncVMSKioskDeviceData() (err error) {
 	collection.DropCollection()
 
 	for i := 0; i < vmsListKioskByPResponse.DataCounts; i++ {
-		_, kioskDeviceUUIDArray , kioskLocationUUIDArray = isContainsKioskDeviceUUID(kioskDeviceUUIDArray, kioskLocationUUIDArray, vmsListKioskByPResponse.KioskDevices[i].ID.Hex())
+		_, kioskDeviceUUIDArray, kioskLocationUUIDArray = isContainsKioskDeviceUUID(kioskDeviceUUIDArray, kioskLocationUUIDArray, vmsListKioskByPResponse.KioskDevices[i].ID.Hex())
 		saveKioskDeviceToBridgeDatabase(vmsListKioskByPResponse.KioskDevices[i])
 	}
 	//logv.Info(kioskDeviceUUIDArray)
@@ -363,8 +368,7 @@ func isContainsKioskDeviceUUID(kioskDeviceUUIDArray []string, kioskLocationUUIDA
 	return false, kioskDeviceUUIDArray, kioskLocationUUIDArray
 }
 
-
-func (m *VmsServerModel) SyncVMSPersonData() (syncDataCounts int){
+func (m *VmsServerModel) SyncVMSPersonData() (syncDataCounts int) {
 	listPersonByPData := VmsListPersonByPBody{
 		m.userToken,
 		"vmsPersonSerial",
@@ -425,17 +429,15 @@ func saveReportsToBridgeDatabase(recordsUUID string, KRData KioskReport) () {
 
 	sr := VmsSyncRecords{}
 
-	err = collectionSyncRecords.FindId(bson.ObjectIdHex(recordsUUID)).One(&sr)
-	if err != nil {
+	if err = collectionSyncRecords.FindId(bson.ObjectIdHex(recordsUUID)).One(&sr); err != nil {
 		logv.Error(err.Error())
-		WriteLog(EVENT_TYPE_VMS_KIOSK_REPORTS_SYNC_FAIL, "SYSTEM", err.Error() + " :> " + recordsUUID, nil)
+		WriteLog(EVENT_TYPE_VMS_KIOSK_REPORTS_SYNC_FAIL, "SYSTEM", err.Error()+" :> "+recordsUUID, nil)
 		return
 	}
 
-	err = collectionSyncRecords.UpdateId(bson.ObjectIdHex(recordsUUID), bson.M{"$set": bson.M{"syncVmsDataCounts": sr.SyncVmsDataCounts + 1}})
-	if err != nil {
+	if err = collectionSyncRecords.UpdateId(bson.ObjectIdHex(recordsUUID), bson.M{"$set": bson.M{"syncVmsDataCounts": sr.SyncVmsDataCounts + 1}}); err != nil {
 		logv.Error(err.Error())
-		WriteLog(EVENT_TYPE_VMS_KIOSK_REPORTS_SYNC_FAIL, "SYSTEM", err.Error() + " :> " + recordsUUID, nil)
+		WriteLog(EVENT_TYPE_VMS_KIOSK_REPORTS_SYNC_FAIL, "SYSTEM", err.Error()+" :> "+recordsUUID, nil)
 		return
 	}
 
@@ -444,7 +446,6 @@ func saveReportsToBridgeDatabase(recordsUUID string, KRData KioskReport) () {
 	if len(KRData.VmsPerson) > 0 {
 		logv.Info("sync SUCCESS")
 		//rfidMQTTModel.PublishToRFIDServerTest()
-
 		if err = rfidMQTTModel.PublishToRFIDServer(KRData.VmsPerson[0].VmsPersonSerial,
 			KRData.AvaloDeviceUuid,
 			strconv.FormatFloat(float64(KRData.AvaloTemperature), 'f', 1, 64)); err != nil {
@@ -456,7 +457,7 @@ func saveReportsToBridgeDatabase(recordsUUID string, KRData KioskReport) () {
 		err = collectionSyncRecords.UpdateId(bson.ObjectIdHex(recordsUUID), bson.M{"$set": bson.M{"RFIDDataSendCounts": sr.RFIDDataSendCounts + 1}})
 		if err != nil {
 			logv.Error(err.Error())
-			WriteLog(EVENT_TYPE_VMS_KIOSK_REPORTS_SYNC_FAIL, "SYSTEM", err.Error() + " :> " + recordsUUID, nil)
+			WriteLog(EVENT_TYPE_VMS_KIOSK_REPORTS_SYNC_FAIL, "SYSTEM", err.Error()+" :> "+recordsUUID, nil)
 			return
 		}
 
@@ -489,7 +490,7 @@ func saveReportsToBridgeDatabase(recordsUUID string, KRData KioskReport) () {
 			"report_templateUUID":         KRData.ReportTemplateUUID,
 			"checkInUuid":                 KRData.CheckInUuid,
 			"vmsPerson":                   KRData.VmsPerson[0],
-			"syncStatus":             	   true,
+			"syncStatus":                  true,
 		})
 	} else {
 		logv.Info("sync FAIL")
@@ -529,10 +530,9 @@ func saveReportsToBridgeDatabase(recordsUUID string, KRData KioskReport) () {
 			"report_templateUUID":         KRData.ReportTemplateUUID,
 			"checkInUuid":                 KRData.CheckInUuid,
 			"vmsPerson":                   vmsPerson,
-			"syncStatus":             	   false,
+			"syncStatus":                  false,
 		})
 	}
-
 
 }
 
@@ -648,7 +648,7 @@ func UpdateVMSPersonData(
 	personUUID string,
 	vmsPersonName string,
 	vmsPersonUnit string,
-) (errCode int){
+) (errCode int) {
 	updatePersonData := VmsUpdatePersonBody{
 		MainUserToken,
 		personUUID,
@@ -690,7 +690,7 @@ func UpdateVMSPersonData(
 		}
 		return 0
 	}
-	logv.Info(" === Update Person Success ===, UUID:> ", personUUID + ", :> " + vmsPersonName)
+	logv.Info(" === Update Person Success ===, UUID:> ", personUUID+", :> "+vmsPersonName)
 	return 0
 }
 
